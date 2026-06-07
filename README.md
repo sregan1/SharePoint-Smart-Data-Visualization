@@ -1,21 +1,26 @@
 # Smart Data Visualization — SharePoint SPFx Web Part
 
-A SharePoint Framework (SPFx) web part that lets you visualize data from multiple sources using a variety of interactive chart types. No coding required — configure everything through the SharePoint page editor.
+A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required. Configure everything through the SharePoint page editor.
+
+![Bar chart showing monthly revenue with web part header](screenshots/hero-chart.png)
 
 ---
 
 ## Features
 
 ### Data Sources
+
 | Source | Description |
 |---|---|
-| **File Upload** | Upload a CSV, Excel (.xlsx), or Excel 97–2003 (.xls) file directly from your computer |
-| **Paste CSV** | Paste comma-separated data directly into the web part |
+| **Upload File** | Upload a CSV, Excel (.xlsx), or Excel 97–2003 (.xls) file directly from your computer. Data persists across page reloads (up to 200 KB). |
 | **SharePoint List** | Load data from any SharePoint list on the current or another site |
 | **SharePoint File** | Reference a CSV or Excel file stored in a SharePoint document library by URL |
 | **REST API** | Connect to any REST endpoint that returns JSON data |
 
 ### Chart Types
+
+![Gallery showing all nine chart types](screenshots/chart-gallery.png)
+
 | Chart | Best Used For |
 |---|---|
 | **Bar (Vertical)** | Comparing values across categories |
@@ -27,6 +32,15 @@ A SharePoint Framework (SPFx) web part that lets you visualize data from multipl
 | **Pie** | Part-to-whole relationships (up to ~7 categories) |
 | **Doughnut** | Same as pie with a center hole for labels or KPIs |
 | **Radar** | Multi-attribute comparison across several items |
+
+### Other Features
+
+- **Web part header** — optional title above the chart, toggled from the property pane
+- **7 color palettes** — Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool
+- **Data labels** — optional value annotations with prefix/suffix and K/M abbreviation
+- **Stacked bars** — toggle stacking on Bar and Line charts
+- **Data table** — optional tabular view below the chart, paginated
+- **Export** — download as PNG, JPEG, CSV, or Excel from every chart
 
 ---
 
@@ -42,11 +56,8 @@ A SharePoint Framework (SPFx) web part that lets you visualize data from multipl
 ## Development Setup
 
 ```bash
-# Clone / open the project folder
-cd c:\Development\SharePointSmartDataVisualization
-
 # Install dependencies (already done if you received this as a built project)
-npm install
+npm install --legacy-peer-deps
 
 # Update serve.json with your SharePoint site URL
 # Edit config/serve.json → change initialPage to your workbench URL:
@@ -82,22 +93,20 @@ gulp package-solution --ship
 
 ## Sample Data
 
-The `sample-data/` folder contains ready-to-use files for testing all data source options:
+The `sample-data/` folder contains ready-to-use files for testing all chart types:
 
 | File | Best Chart Type | Columns |
 |---|---|---|
-| `sales-by-month.csv/.xlsx` | Bar, Line, Area | Month, Online Sales, Store Sales, Total |
-| `market-share.csv/.xlsx` | Pie, Doughnut | Company, Market Share, Revenue (M) |
-| `population-gdp.csv/.xlsx` | Scatter, Bubble | Country, GDP Per Capita, Life Expectancy, Population (M) |
-| `product-ratings.csv/.xlsx` | Radar, Grouped Bar | Product, Performance, Reliability, Ease of Use, Value, Support, Features |
-| `temperature-trend.csv/.xlsx` | Line, Area | Month, High Temp, Low Temp, Avg Temp, Rainfall |
-| `study-hours-scores.csv/.xlsx` | Scatter | Study Hours, Test Score, Confidence Level |
+| `monthly-sales.csv` | Bar, Line, Area | Month, Revenue, Units, Target, Profit |
+| `regional-sales.csv` | Horizontal Bar | Region, Revenue, Budget, Headcount |
+| `market-share.csv` | Pie, Doughnut | Product, MarketShare, Revenue, YoYGrowth |
+| `scatter-rnd.csv` | Scatter | Company, RnDSpend, Revenue |
+| `bubble-companies.csv` | Bubble | Company, Revenue, Employees, GrowthRate |
+| `radar-products.csv` | Radar | Dimension, ProductA, ProductB, ProductC |
+| `sales-by-month.csv` | Bar, Line, Area | Month, Online Sales, Store Sales, Total |
+| `population-gdp.csv` | Scatter, Bubble | Country, GDP Per Capita, Life Expectancy, Population (M) |
+| `product-ratings.csv` | Radar | Product, Performance, Reliability, Ease of Use, Value, Support, Features |
 | `api-response-example.json` | Bar, Line | Quarter, Revenue, Expenses, Profit |
-
-To regenerate Excel files from CSVs:
-```bash
-node sample-data/generate-excel.js
-```
 
 To run a local REST API test server:
 ```bash
@@ -115,7 +124,9 @@ smart-data-visualization/
 │   ├── config.json               # Bundle entry points + localization
 │   ├── package-solution.json     # Solution ID, version, metadata
 │   └── serve.json                # Local dev server config
+├── mockups/                      # Screenshot guide HTML
 ├── sample-data/                  # Test data files (not deployed)
+├── screenshots/                  # Documentation screenshots
 ├── src/
 │   └── webparts/
 │       └── smartDataVisualization/
@@ -150,7 +161,6 @@ smart-data-visualization/
 
 ## Limitations
 
-- **Paste CSV / File Upload data size:** Data is stored in web part properties. Keep datasets under ~500 rows for pasted data; larger datasets should use SharePoint List or REST API.
-- **File Upload in View mode:** File uploads are processed client-side and not automatically re-loaded on page refresh. For persistent data, use a SharePoint list, SharePoint file URL, or REST API as the data source.
+- **Upload file data size:** Uploaded file data is serialized to the web part property bag. Datasets up to 200 KB persist across page reloads. Larger files display for the current session only — store them in a SharePoint document library and use the SharePoint File source for fully persistent large datasets.
 - **Direct database connections:** SPFx cannot connect directly to databases. Use a REST API (e.g., Azure Function or custom API) that queries your database and returns JSON.
 - **Cross-origin REST APIs:** The browser's same-origin policy applies. For external APIs, ensure CORS headers are configured on the server.

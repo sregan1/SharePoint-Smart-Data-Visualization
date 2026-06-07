@@ -251,6 +251,47 @@
 <div class="content">
 
 <!-- ══════════════════════════════════════════════════════════
+     CAPTURE GUIDE
+══════════════════════════════════════════════════════════ -->
+<div style="background:white;border:1px solid #edebe9;border-radius:6px;padding:20px 24px;margin-bottom:36px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+  <div style="font-size:16px;font-weight:700;color:#323130;margin-bottom:4px;">How to Capture Screenshots</div>
+  <p style="font-size:13px;color:#605e5c;margin-bottom:14px;">
+    Use <strong>Windows Snipping Tool</strong> (Win+Shift+S) or browser DevTools (<kbd>F12</kbd> → Elements → right-click a <code>.webpart</code> div → <em>Capture node screenshot</em>) to capture each frame below.
+    Save into a <code>screenshots/</code> folder at the project root using the filenames in the table below.
+  </p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#f3f2f1;">
+        <th style="text-align:left;padding:6px 10px;border:1px solid #edebe9;font-weight:700;">Section</th>
+        <th style="text-align:left;padding:6px 10px;border:1px solid #edebe9;font-weight:700;">Frame label</th>
+        <th style="text-align:left;padding:6px 10px;border:1px solid #edebe9;font-weight:700;">Save as (in <code>screenshots/</code>)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">UI Screens</td><td style="padding:5px 10px;border:1px solid #edebe9;">Screen 1A — empty config panel</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">datasource-empty.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">UI Screens</td><td style="padding:5px 10px;border:1px solid #edebe9;">Screen 1B — file loaded, column mapping</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">datasource-file-loaded.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">UI Screens</td><td style="padding:5px 10px;border:1px solid #edebe9;">Screen 1C — config collapsed, chart visible</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">hero-chart.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">UI Screens</td><td style="padding:5px 10px;border:1px solid #edebe9;">Screen 1D — preview / read-only mode</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">preview-mode.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 1 — Bar (Vertical)</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-bar.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 2 — Bar (Horizontal)</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-hbar.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 3 — Line</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-line.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 4 — Area</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-area.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 5 — Scatter</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-scatter.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 6 — Bubble</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-bubble.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 7 — Pie</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-pie.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 8 — Doughnut</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-doughnut.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Chart Types</td><td style="padding:5px 10px;border:1px solid #edebe9;">Chart 9 — Radar</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">chart-radar.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Stacked Bar</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-stacked.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Data Labels</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-data-labels.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Color Palettes</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-palettes.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Data Table</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-data-table.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">SharePoint List config</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">datasource-sharepoint-list.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;color:#797775;" colspan="3"><em>chart-gallery.png — capture the two-column grid in the "Chart Types" section showing all 8 smaller charts together (Charts 1–8). Crop tightly around the grid.</em></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
      SECTION 1 — UI SCREENS
 ══════════════════════════════════════════════════════════ -->
 <h2 class="section-title" id="ui-screens">UI Screens</h2>
