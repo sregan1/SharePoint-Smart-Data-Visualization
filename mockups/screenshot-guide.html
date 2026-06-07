@@ -1003,7 +1003,9 @@ Object.entries(P).forEach(([name, colors]) => {
   div.style.cssText = 'text-align:center;';
   div.innerHTML = `
     <div style="font-size:11px;font-weight:600;color:#323130;margin-bottom:6px;text-transform:capitalize;">${name}</div>
-    <canvas id="pal-${name}" height="80"></canvas>
+    <div style="position:relative;height:80px;">
+      <canvas id="pal-${name}"></canvas>
+    </div>
   `;
   paletteGrid.appendChild(div);
   setTimeout(() => {
