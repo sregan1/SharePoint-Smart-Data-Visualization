@@ -25,6 +25,9 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
     const element: React.ReactElement<ISmartDataVisualizationProps> = React.createElement(
       SmartDataVisualization,
       {
+        // Header
+        webPartHeader: p.webPartHeader || '',
+        showWebPartHeader: p.showWebPartHeader !== false,
         // Core
         chartType: p.chartType || 'bar',
         chartTitle: p.chartTitle || '',
@@ -39,7 +42,8 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
         showExportBar: p.showExportBar !== false,
         // Data source
         dataSourceType: p.dataSourceType || 'upload',
-        pastedData: p.pastedData || '',
+        uploadedData: p.uploadedData || '',
+        uploadedFileName: p.uploadedFileName || '',
         siteUrl: p.siteUrl || '',
         listName: p.listName || '',
         dataUrl: p.dataUrl || '',
@@ -142,6 +146,19 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
         {
           header: { description: strings.PropertyPaneDescription },
           groups: [
+            {
+              groupName: strings.HeaderGroupName,
+              groupFields: [
+                PropertyPaneToggle('showWebPartHeader', {
+                  label: strings.ShowWebPartHeaderFieldLabel,
+                  checked: this.properties.showWebPartHeader !== false,
+                }),
+                PropertyPaneTextField('webPartHeader', {
+                  label: strings.WebPartHeaderFieldLabel,
+                  placeholder: 'e.g. Sales Dashboard',
+                }),
+              ],
+            },
             {
               groupName: strings.ChartSettingsGroupName,
               groupFields: [

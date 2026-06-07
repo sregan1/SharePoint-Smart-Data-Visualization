@@ -15,11 +15,17 @@ import {
 } from '../types';
 import styles from './SmartDataVisualization.module.scss';
 
+const SIZE_LIMIT = 200_000; // ~200KB JSON — safe SPFx property bag limit
+
 interface IDataSourcePanelProps {
   config: IDataSourceConfig;
   context: WebPartContext;
+  uploadedFileName: string;
+  uploadedRowCount: number;
   onConfigChange: (config: Partial<IDataSourceConfig>) => void;
   onDataLoaded: (data: IChartRecord[], columns: string[]) => void;
+  onPersistData: (json: string, fileName: string) => void;
+  onClearData: () => void;
 }
 
 const DELIMITER_OPTIONS = [
@@ -33,20 +39,24 @@ const DELIMITER_OPTIONS = [
 const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   config,
   context,
+  uploadedFileName,
+  uploadedRowCount,
   onConfigChange,
   onDataLoaded,
+  onPersistData,
+  onClearData,
 }) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [sizeWarning, setSizeWarning] = React.useState('');
   const [availableLists, setAvailableLists] = React.useState<string[]>([]);
   const [isDiscovering, setIsDiscovering] = React.useState(false);
   const [discoverError, setDiscoverError] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const sourceTypes: DataSourceType[] = ['upload', 'paste', 'sharePointList', 'sharePointFile', 'restApi'];
+  const sourceTypes: DataSourceType[] = ['upload', 'sharePointList', 'sharePointFile', 'restApi'];
 
-  // Fetch available SharePoint lists when this source type is active
   React.useEffect(() => {
     if (config.dataSourceType !== 'sharePointList') return;
     let cancelled = false;
@@ -70,21 +80,38 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     };
     discover();
     return () => { cancelled = true; };
-  // Re-run if site URL changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.dataSourceType, config.siteUrl]);
 
   const extractColumns = (data: IChartRecord[]): string[] => {
     if (!data.length) return [];
-    return Object.keys(data[0]).filter(
-      k => !k.startsWith('odata.') && k !== '__metadata'
-    );
+    return Object.keys(data[0]).filter(k => !k.startsWith('odata.') && k !== '__metadata');
   };
 
-  const handleDataLoaded = (data: IChartRecord[]) => {
+  const handleDataLoaded = (data: IChartRecord[], fileName?: string) => {
     const columns = extractColumns(data);
-    setSuccess(`Loaded ${data.length} rows with ${columns.length} columns.`);
     setError('');
+    setSizeWarning('');
+
+    if (fileName !== undefined) {
+      // File upload — attempt persistence
+      const json = JSON.stringify(data);
+      if (json.length <= SIZE_LIMIT) {
+        onPersistData(json, fileName);
+        setSuccess(`Loaded ${data.length} rows with ${columns.length} columns. Data will persist when you leave the page.`);
+      } else {
+        onPersistData('', fileName); // store filename only so UI reflects "loaded" state
+        setSizeWarning(
+          `Dataset (${Math.round(json.length / 1024)}KB) exceeds the 200KB persistence limit. ` +
+          `The chart will show data this session but will clear on page reload. ` +
+          `For large files, upload to a SharePoint library and use the SharePoint File source.`
+        );
+        setSuccess(`Loaded ${data.length} rows with ${columns.length} columns.`);
+      }
+    } else {
+      setSuccess(`Loaded ${data.length} rows with ${columns.length} columns.`);
+    }
+
     onDataLoaded(data, columns);
   };
 
@@ -106,8 +133,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
+          const workbook = XLSX.read(e.target?.result, { type: 'binary' });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           resolve(XLSX.utils.sheet_to_json<IChartRecord>(sheet));
         } catch (err) {
@@ -122,8 +148,12 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = '';
     setLoading(true);
     setError('');
+    setSuccess('');
+    setSizeWarning('');
     try {
       const name = file.name.toLowerCase();
       let data: IChartRecord[];
@@ -135,7 +165,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       } else {
         throw new Error('Unsupported file type. Please upload a .csv, .tsv, .xlsx, or .xls file.');
       }
-      handleDataLoaded(data);
+      handleDataLoaded(data, file.name);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse file');
     } finally {
@@ -143,24 +173,8 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     }
   };
 
-  const handlePastedData = () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = parseCsvText(config.pastedData, config.delimiter || undefined);
-      handleDataLoaded(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to parse CSV');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSharePointList = async () => {
-    if (!config.listName) {
-      setError('Please select or enter a list name.');
-      return;
-    }
+    if (!config.listName) { setError('Please select or enter a list name.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -175,10 +189,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   };
 
   const handleSharePointFile = async () => {
-    if (!config.dataUrl) {
-      setError('Please enter a file URL.');
-      return;
-    }
+    if (!config.dataUrl) { setError('Please enter a file URL.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -189,12 +200,9 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
         const buffer = await response.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        data = XLSX.utils.sheet_to_json<IChartRecord>(sheet);
+        data = XLSX.utils.sheet_to_json<IChartRecord>(workbook.Sheets[workbook.SheetNames[0]]);
       } else {
-        // CSV, TSV, or unknown text — use delimiter setting
-        const text = await response.text();
-        data = parseCsvText(text, config.delimiter || undefined);
+        data = parseCsvText(await response.text(), config.delimiter || undefined);
       }
       handleDataLoaded(data);
     } catch (err) {
@@ -205,10 +213,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   };
 
   const handleRestApi = async () => {
-    if (!config.dataUrl) {
-      setError('Please enter a URL.');
-      return;
-    }
+    if (!config.dataUrl) { setError('Please enter a URL.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -219,9 +224,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       let json = await response.json();
       if (config.dataPath) {
-        for (const part of config.dataPath.split('.')) {
-          json = json?.[part];
-        }
+        for (const part of config.dataPath.split('.')) json = json?.[part];
       }
       const data: IChartRecord[] = Array.isArray(json) ? json : [json];
       handleDataLoaded(data);
@@ -235,14 +238,23 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   const handleLoad = () => {
     switch (config.dataSourceType) {
       case 'upload': fileInputRef.current?.click(); break;
-      case 'paste': handlePastedData(); break;
       case 'sharePointList': handleSharePointList(); break;
       case 'sharePointFile': handleSharePointFile(); break;
       case 'restApi': handleRestApi(); break;
     }
   };
 
-  const showDelimiter = config.dataSourceType === 'paste' || config.dataSourceType === 'sharePointFile';
+  const handleChangeFile = () => {
+    onClearData();
+    setSuccess('');
+    setSizeWarning('');
+    // Small delay so state clears before the picker opens
+    setTimeout(() => fileInputRef.current?.click(), 50);
+  };
+
+  const showDelimiter = config.dataSourceType === 'upload' || config.dataSourceType === 'sharePointFile';
+  const isUpload = config.dataSourceType === 'upload';
+  const hasLoadedFile = isUpload && !!uploadedFileName;
 
   return (
     <div className={styles.editPanel}>
@@ -253,7 +265,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
           <button
             key={type}
             className={`${styles.sourceTypeCard} ${config.dataSourceType === type ? styles.selected : ''}`}
-            onClick={() => { onConfigChange({ dataSourceType: type }); setError(''); setSuccess(''); }}
+            onClick={() => { onConfigChange({ dataSourceType: type }); setError(''); setSuccess(''); setSizeWarning(''); }}
           >
             <span className={styles.icon}>{DATA_SOURCE_ICONS[type]}</span>
             <span className={styles.label}>{DATA_SOURCE_LABELS[type]}</span>
@@ -261,9 +273,9 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
         ))}
       </div>
 
-      {config.dataSourceType === 'upload' && (
+      {/* Upload — two-state UI */}
+      {isUpload && (
         <div>
-          <p className={styles.helpText}>Upload a CSV, TSV, or Excel (.xlsx, .xls) file.</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -271,21 +283,25 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
             style={{ display: 'none' }}
             onChange={handleFileUpload}
           />
-        </div>
-      )}
-
-      {config.dataSourceType === 'paste' && (
-        <div className={styles.fieldRow}>
-          <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-            <label>Paste Delimited Data</label>
-            <textarea
-              value={config.pastedData}
-              onChange={e => onConfigChange({ pastedData: e.target.value })}
-              placeholder={'name,value,category\nAlpha,42,A\nBeta,87,B\nGamma,31,A'}
-              rows={6}
-            />
-            <span className={styles.helpText}>First row must be a header row.</span>
-          </div>
+          {hasLoadedFile ? (
+            <div className={styles.loadedFileBanner}>
+              <span className={styles.loadedFileIcon}>📁</span>
+              <span className={styles.loadedFileInfo}>
+                <strong>{uploadedFileName}</strong>
+                {uploadedRowCount > 0 && <span className={styles.loadedFileRows}> — {uploadedRowCount.toLocaleString()} rows</span>}
+              </span>
+              <div className={styles.loadedFileActions}>
+                <button className={styles.secondaryButton} onClick={handleChangeFile} disabled={loading}>
+                  Change File…
+                </button>
+                <button className={styles.secondaryButton} onClick={() => { onClearData(); setSuccess(''); setSizeWarning(''); }} disabled={loading}>
+                  Clear
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className={styles.helpText}>Upload a CSV, TSV, or Excel (.xlsx, .xls) file.</p>
+          )}
         </div>
       )}
 
@@ -320,10 +336,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
           <div className={styles.fieldGroup}>
             <label>List Name {isDiscovering && <span className={styles.helpText}> — Loading lists…</span>}</label>
             {availableLists.length > 0 ? (
-              <select
-                value={config.listName}
-                onChange={e => onConfigChange({ listName: e.target.value })}
-              >
+              <select value={config.listName} onChange={e => onConfigChange({ listName: e.target.value })}>
                 <option value="">— Select a list —</option>
                 {availableLists.map(name => (
                   <option key={name} value={name}>{name}</option>
@@ -388,18 +401,24 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
         </div>
       )}
 
+      {sizeWarning && (
+        <div className={styles.warningMessage}>⚠️ {sizeWarning}</div>
+      )}
       {error && <div className={styles.errorMessage}>⚠️ {error}</div>}
       {success && <div className={styles.successMessage}>✓ {success}</div>}
 
-      <div className={styles.buttonRow}>
-        <button
-          className={styles.primaryButton}
-          onClick={handleLoad}
-          disabled={loading}
-        >
-          {loading ? 'Loading…' : config.dataSourceType === 'upload' ? 'Choose File…' : 'Load Data'}
-        </button>
-      </div>
+      {/* Hide Load button for upload when a file is already loaded (use Change File instead) */}
+      {!(isUpload && hasLoadedFile) && (
+        <div className={styles.buttonRow}>
+          <button
+            className={styles.primaryButton}
+            onClick={handleLoad}
+            disabled={loading}
+          >
+            {loading ? 'Loading…' : config.dataSourceType === 'upload' ? 'Choose File…' : 'Load Data'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

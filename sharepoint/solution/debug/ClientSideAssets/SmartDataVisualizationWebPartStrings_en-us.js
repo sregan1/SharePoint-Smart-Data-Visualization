@@ -1,6 +1,10 @@
 define([], function() {
   return {
     "PropertyPaneDescription": "Configure your data visualization",
+    // Header
+    "HeaderGroupName": "Header",
+    "WebPartHeaderFieldLabel": "Header Text",
+    "ShowWebPartHeaderFieldLabel": "Show Header",
     // Chart Settings group
     "ChartSettingsGroupName": "Chart Settings",
     "ChartTitleFieldLabel": "Chart Title",

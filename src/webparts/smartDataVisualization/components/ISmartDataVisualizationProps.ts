@@ -2,6 +2,9 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { ChartType, DataSourceType } from '../types';
 
 export interface ISmartDataVisualizationWebPartProps {
+  // Web part header (above the chart container)
+  webPartHeader: string;
+  showWebPartHeader: boolean;
   // Core chart settings
   chartType: ChartType;
   chartTitle: string;
@@ -16,7 +19,8 @@ export interface ISmartDataVisualizationWebPartProps {
   showExportBar: boolean;
   // Data source
   dataSourceType: DataSourceType;
-  pastedData: string;
+  uploadedData: string;
+  uploadedFileName: string;
   siteUrl: string;
   listName: string;
   dataUrl: string;

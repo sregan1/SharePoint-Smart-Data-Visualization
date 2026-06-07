@@ -1,5 +1,9 @@
 declare interface ISmartDataVisualizationWebPartStrings {
   PropertyPaneDescription: string;
+  // Header
+  HeaderGroupName: string;
+  WebPartHeaderFieldLabel: string;
+  ShowWebPartHeaderFieldLabel: string;
   // Chart Settings
   ChartSettingsGroupName: string;
   ChartTitleFieldLabel: string;

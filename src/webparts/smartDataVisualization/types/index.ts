@@ -13,12 +13,11 @@ export type DataSourceType =
   | 'upload'
   | 'sharePointList'
   | 'sharePointFile'
-  | 'restApi'
-  | 'paste';
+  | 'restApi';
 
 export interface IDataSourceConfig {
   dataSourceType: DataSourceType;
-  pastedData: string;
+  uploadedFileName: string;
   siteUrl: string;
   listName: string;
   dataUrl: string;
@@ -86,7 +85,6 @@ export const DATA_SOURCE_LABELS: Record<DataSourceType, string> = {
   sharePointList: 'SharePoint List',
   sharePointFile: 'SharePoint File',
   restApi: 'REST API',
-  paste: 'Paste CSV',
 };
 
 export const DATA_SOURCE_ICONS: Record<DataSourceType, string> = {
@@ -94,7 +92,6 @@ export const DATA_SOURCE_ICONS: Record<DataSourceType, string> = {
   sharePointList: '📋',
   sharePointFile: '🔗',
   restApi: '🌐',
-  paste: '📝',
 };
 
 export const isPieOrDoughnut = (chartType: ChartType): boolean =>

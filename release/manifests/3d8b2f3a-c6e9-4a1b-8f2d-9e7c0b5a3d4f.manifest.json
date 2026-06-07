@@ -31,7 +31,8 @@
         "showDataTable": false,
         "stacked": false,
         "dataSourceType": "upload",
-        "pastedData": "",
+        "uploadedData": "",
+        "uploadedFileName": "",
         "siteUrl": "",
         "listName": "",
         "dataUrl": "",
@@ -53,7 +54,7 @@
     "scriptResources": {
       "smart-data-visualization-web-part": {
         "type": "path",
-        "path": "smart-data-visualization-web-part_085724091fccd5f26325.js"
+        "path": "smart-data-visualization-web-part_393722100a84243be46b.js"
       },
       "react": {
         "type": "component",
@@ -82,7 +83,7 @@
       },
       "SmartDataVisualizationWebPartStrings": {
         "type": "path",
-        "path": "SmartDataVisualizationWebPartStrings_en-us_96db71b4e572ca5a4280e85522c8d60b.js"
+        "path": "SmartDataVisualizationWebPartStrings_en-us_afffb65e95f36e0c2757b6473af087b6.js"
       }
     }
   }

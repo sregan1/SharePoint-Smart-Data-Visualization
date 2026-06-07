@@ -1,10 +1,10 @@
 import * as React from 'react';
-import * as Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { spfi, SPFx } from '@pnp/sp';
 import '@pnp/sp/webs';
 import '@pnp/sp/lists';
 import '@pnp/sp/items';
+import * as Papa from 'papaparse';
 import { ISmartDataVisualizationProps } from './ISmartDataVisualizationProps';
 import { IChartRecord, IColumnConfig, IDataSourceConfig } from '../types';
 import DataSourcePanel from './DataSourcePanel';
@@ -28,24 +28,12 @@ interface ISmartDataVisualizationState {
   filterColumn: string;
   filterValue: string;
   seriesColors: string;
+  // Persisted upload state
+  uploadedFileName: string;
 }
 
 const extractColumns = (rows: IChartRecord[]): string[] =>
   rows.length ? Object.keys(rows[0]).filter(k => !k.startsWith('odata.') && k !== '__metadata') : [];
-
-// Pre-compute paste CSV data synchronously so it's available on the very first render.
-const parsePaste = (pastedData: string, delimiter?: string): IChartRecord[] => {
-  if (!pastedData) return [];
-  try {
-    const result = Papa.parse<IChartRecord>(pastedData, {
-      header: true, dynamicTyping: true, skipEmptyLines: true,
-      delimiter: delimiter || undefined,
-    });
-    return result.data || [];
-  } catch {
-    return [];
-  }
-};
 
 const buildColumnConfig = (
   columns: string[],
@@ -67,6 +55,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   const {
     context,
     isReadOnly,
+    webPartHeader,
+    showWebPartHeader,
     chartType,
     chartTitle,
     showLegend,
@@ -91,16 +81,21 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     onPropertiesUpdate,
   } = props;
 
-  // Lazy initializer: runs once synchronously before first render.
-  // Paste CSV is parsed here so the chart is visible immediately — no async effect needed.
+  // Lazy initializer — runs once synchronously before first render.
+  // If uploadedData was persisted, restore it immediately so the chart renders on frame 1.
   const [state, setState] = React.useState<ISmartDataVisualizationState>(() => {
-    const srcType = props.dataSourceType || 'upload';
+    // Migration guard: 'paste' was removed; treat any old instances as 'upload'
+    const rawType = props.dataSourceType as string;
+    const srcType = (rawType === 'paste' || !rawType) ? 'upload' : props.dataSourceType;
+
     let data: IChartRecord[] = [];
     let columns: string[] = [];
 
-    if (srcType === 'paste') {
-      data = parsePaste(props.pastedData, props.delimiter);
-      columns = extractColumns(data);
+    if (srcType === 'upload' && props.uploadedData) {
+      try {
+        data = JSON.parse(props.uploadedData);
+        columns = extractColumns(data);
+      } catch { /* silent fail */ }
     }
 
     const columnConfig = buildColumnConfig(columns, data, props.xColumn, props.yColumns);
@@ -117,9 +112,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       filterColumn: props.filterColumn || '',
       filterValue: props.filterValue || '',
       seriesColors: props.seriesColors || '',
+      uploadedFileName: props.uploadedFileName || '',
       dataSourceConfig: {
         dataSourceType: srcType,
-        pastedData: props.pastedData || '',
+        uploadedFileName: props.uploadedFileName || '',
         siteUrl: props.siteUrl || '',
         listName: props.listName || '',
         dataUrl: props.dataUrl || '',
@@ -129,24 +125,14 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       columnConfig,
     };
   });
+
   const [refreshKey, setRefreshKey] = React.useState(0);
 
-  // If paste data was pre-loaded synchronously, persist the detected column mapping once on mount.
-  React.useEffect(() => {
-    if (state.data.length > 0 && state.columnConfig.xColumn) {
-      onPropertiesUpdate({
-        xColumn: state.columnConfig.xColumn,
-        yColumns: state.columnConfig.yColumns.join(','),
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Async auto-load for network sources (SP list, SP file, REST API).
-  // Paste is handled synchronously above; upload cannot be auto-loaded.
+  // 'upload' is skipped — data is either pre-loaded from uploadedData or requires user interaction.
   React.useEffect(() => {
     const srcType = props.dataSourceType || 'upload';
-    if (srcType === 'paste' || srcType === 'upload') return;
+    if (srcType === 'upload') return;
 
     setState(prev => ({ ...prev, isLoading: true, autoLoadError: '' }));
 
@@ -170,8 +156,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             const wb = XLSX.read(buffer, { type: 'array' });
             rows = XLSX.utils.sheet_to_json<IChartRecord>(wb.Sheets[wb.SheetNames[0]]);
           } else {
-            const text = await response.text();
-            const result = Papa.parse<IChartRecord>(text, {
+            const result = Papa.parse<IChartRecord>(await response.text(), {
               header: true, dynamicTyping: true, skipEmptyLines: true, delimiter: delim,
             });
             rows = result.data;
@@ -206,12 +191,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
 
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]); // refreshKey = 0 on mount; incremented by Refresh button
+  }, [refreshKey]);
 
   const handleDataLoaded = (data: IChartRecord[], columns: string[]) => {
-    const firstNumeric = columns.find(col =>
-      data.some(row => typeof row[col] === 'number')
-    );
+    const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
     setState(prev => {
       const newColumnConfig: IColumnConfig = {
         xColumn: prev.columnConfig.xColumn || columns[0] || '',
@@ -232,9 +215,28 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         columnConfig: newColumnConfig,
         autoLoadError: '',
         isLoading: false,
-        isConfigOpen: false,  // auto-collapse on successful load
+        isConfigOpen: false,
       };
     });
+  };
+
+  // Called by DataSourcePanel when a file is uploaded and should be persisted.
+  const handlePersistData = (json: string, fileName: string) => {
+    setState(prev => ({ ...prev, uploadedFileName: fileName }));
+    onPropertiesUpdate({ uploadedData: json, uploadedFileName: fileName });
+  };
+
+  // Called by "Clear" button — wipes persisted data and resets to empty state.
+  const handleClearData = () => {
+    setState(prev => ({
+      ...prev,
+      data: [],
+      columns: [],
+      uploadedFileName: '',
+      isConfigOpen: true,
+      autoLoadError: '',
+    }));
+    onPropertiesUpdate({ uploadedData: '', uploadedFileName: '' });
   };
 
   const handleDataSourceConfigChange = (partial: Partial<IDataSourceConfig>) => {
@@ -244,7 +246,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     }));
     const mapped: Record<string, string> = {};
     if (partial.dataSourceType !== undefined) mapped.dataSourceType = partial.dataSourceType;
-    if (partial.pastedData !== undefined) mapped.pastedData = partial.pastedData;
+    if (partial.uploadedFileName !== undefined) mapped.uploadedFileName = partial.uploadedFileName;
     if (partial.siteUrl !== undefined) mapped.siteUrl = partial.siteUrl;
     if (partial.listName !== undefined) mapped.listName = partial.listName;
     if (partial.dataUrl !== undefined) mapped.dataUrl = partial.dataUrl;
@@ -272,11 +274,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   };
 
   const handleDataControlsChange = (partial: {
-    sortColumn?: string;
-    sortDirection?: string;
-    rowLimit?: number;
-    filterColumn?: string;
-    filterValue?: string;
+    sortColumn?: string; sortDirection?: string; rowLimit?: number;
+    filterColumn?: string; filterValue?: string;
   }) => {
     setState(prev => ({ ...prev, ...partial }));
     const mapped: Record<string, string | number> = {};
@@ -288,21 +287,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     if (Object.keys(mapped).length) onPropertiesUpdate(mapped as any);
   };
 
-  // Refresh: re-parse paste or re-fetch network sources
   const handleRefresh = () => {
     const srcType = props.dataSourceType || 'upload';
     if (srcType === 'upload') return;
-
-    if (srcType === 'paste') {
-      // Synchronous for paste
-      const rows = parsePaste(props.pastedData, props.delimiter);
-      if (rows.length > 0) {
-        handleDataLoaded(rows, extractColumns(rows));
-      }
-    } else {
-      // Network sources: increment key to re-trigger the effect
-      setRefreshKey(k => k + 1);
-    }
+    setRefreshKey(k => k + 1);
   };
 
   const processedData = React.useMemo(() => {
@@ -333,6 +321,12 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
 
   return (
     <div className={styles.container}>
+      {showWebPartHeader && webPartHeader && (
+        <div className={styles.webPartHeader}>
+          <span className={styles.webPartHeaderText}>{webPartHeader}</span>
+        </div>
+      )}
+
       {!isReadOnly && (
         <>
           <div className={styles.configToggleRow}>
@@ -352,8 +346,12 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
               <DataSourcePanel
                 config={dataSourceConfig}
                 context={context}
+                uploadedFileName={state.uploadedFileName}
+                uploadedRowCount={state.data.length}
                 onConfigChange={handleDataSourceConfigChange}
                 onDataLoaded={handleDataLoaded}
+                onPersistData={handlePersistData}
+                onClearData={handleClearData}
               />
               {hasData && columns.length > 0 && (
                 <ColumnMapper

@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Data Visualization — Screenshot Guide</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    /* ─── Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      color: #323130;
+      background: #f3f2f1;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────── */
+    .page-header {
+      background: #0078d4;
+      color: white;
+      padding: 18px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .page-header h1 { font-size: 20px; font-weight: 600; }
+    .page-header p  { font-size: 13px; opacity: .85; }
+
+    .toc {
+      background: white;
+      border-bottom: 1px solid #edebe9;
+      padding: 10px 32px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .toc a {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: #f3f2f1;
+      color: #0078d4;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #edebe9;
+      transition: background .1s;
+    }
+    .toc a:hover { background: #eff6fc; border-color: #0078d4; }
+
+    .content { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+
+    /* ─── Section headers ────────────────────────────────────── */
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #323130;
+      margin: 48px 0 8px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #0078d4;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+    .section-desc { color: #605e5c; font-size: 13px; margin-bottom: 24px; }
+
+    /* ─── Screenshot frame ───────────────────────────────────── */
+    .screenshot-frame {
+      background: white;
+      border: 1px solid #edebe9;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .screenshot-label {
+      background: #f3f2f1;
+      border-bottom: 1px solid #edebe9;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .screenshot-label .badge {
+      background: #0078d4;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .screenshot-label .title { font-size: 13px; font-weight: 600; color: #323130; }
+    .screenshot-label .hint  { font-size: 11px; color: #797775; margin-left: auto; }
+
+    /* ─── Web part simulation ────────────────────────────────── */
+    .webpart {
+      padding: 16px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      color: #323130;
+    }
+
+    /* Header */
+    .wp-header { margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #edebe9; }
+    .wp-header-text { font-size: 20px; font-weight: 600; color: #323130; }
+
+    /* Config toggle */
+    .config-toggle-row { margin-bottom: 8px; }
+    .config-toggle-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; background: #f3f2f1; color: #323130;
+      border: 1px solid #edebe9; border-radius: 2px; cursor: default;
+      font-size: 12px; font-family: inherit;
+    }
+    .config-toggle-badge { color: #107c10; font-weight: 600; }
+
+    /* Edit panel */
+    .edit-panel {
+      border: 1px solid #edebe9; border-radius: 4px;
+      padding: 16px; margin-bottom: 12px; background: #faf9f8;
+    }
+    .section-header { font-size: 14px; font-weight: 600; color: #323130; margin-bottom: 10px; }
+
+    /* Source type grid */
+    .source-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;
+    }
+    .source-card {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px 6px; border: 2px solid #edebe9; border-radius: 4px;
+      text-align: center; background: white; cursor: default;
+    }
+    .source-card.selected { border-color: #0078d4; background: #eff6fc; }
+    .source-icon { font-size: 22px; margin-bottom: 4px; }
+    .source-label { font-size: 11px; font-weight: 600; color: #323130; }
+
+    /* Loaded file banner */
+    .loaded-file-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; background: #f0f8ff;
+      border: 1px solid #c7e0f4; border-radius: 4px; margin-bottom: 10px;
+    }
+    .loaded-file-info { flex: 1; font-size: 13px; }
+    .loaded-file-rows { color: #605e5c; font-weight: normal; }
+    .loaded-file-actions { display: flex; gap: 6px; }
+
+    /* Buttons */
+    .btn-primary {
+      padding: 7px 16px; background: #0078d4; color: white;
+      border: none; border-radius: 2px; cursor: default; font-size: 13px; font-family: inherit;
+    }
+    .btn-secondary {
+      padding: 5px 12px; background: white; color: #0078d4;
+      border: 1px solid #c8c6c4; border-radius: 2px; cursor: default; font-size: 12px; font-family: inherit;
+    }
+    .btn-refresh {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; background: white; color: #0078d4;
+      border: 1px solid #c8c6c4; border-radius: 2px; cursor: default;
+      font-size: 12px; font-family: inherit;
+    }
+
+    /* No-data message */
+    .no-data-msg {
+      text-align: center; padding: 40px 20px; color: #797775;
+      font-size: 14px; border: 2px dashed #edebe9; border-radius: 4px;
+    }
+
+    /* Export bar */
+    .export-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; padding: 8px 0 2px; border-top: 1px solid #edebe9;
+      margin-top: 8px; flex-wrap: wrap;
+    }
+    .export-label { font-size: 11px; color: #797775; margin-right: 2px; }
+    .export-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; background: white; color: #0078d4;
+      border: 1px solid #c8c6c4; border-radius: 2px; cursor: default;
+      font-size: 12px; font-family: inherit;
+    }
+
+    /* Field group */
+    .field-group { margin-bottom: 12px; }
+    .field-group label { display: block; font-size: 12px; font-weight: 600; color: #323130; margin-bottom: 4px; }
+    .field-group input, .field-group select, .field-group textarea {
+      width: 100%; padding: 5px 8px; border: 1px solid #8a8886;
+      border-radius: 2px; font-size: 13px; color: #323130;
+      background: white; font-family: inherit;
+    }
+    .field-group textarea { font-family: "Consolas", "Courier New", monospace; resize: none; }
+    .help-text { font-size: 11px; color: #797775; margin-top: 3px; display: block; }
+
+    /* Chart container */
+    .chart-container { position: relative; margin-bottom: 16px; }
+
+    /* Data table preview */
+    .data-table-wrapper { overflow-x: auto; border: 1px solid #edebe9; border-radius: 3px; margin-top: 12px; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th { background: #f3f2f1; padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #edebe9; white-space: nowrap; }
+    .data-table td { padding: 5px 10px; border-bottom: 1px solid #edebe9; white-space: nowrap; }
+    .data-table tr:last-child td { border-bottom: none; }
+
+    /* Grid for chart types */
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
+
+    /* Read-only mode bar */
+    .readonly-bar {
+      display: flex; justify-content: flex-end; margin-top: 4px;
+    }
+
+    /* Feature callout */
+    .callout {
+      background: #eff6fc; border-left: 3px solid #0078d4;
+      padding: 10px 14px; margin-bottom: 16px; border-radius: 0 4px 4px 0;
+      font-size: 12px; color: #323130;
+    }
+    .callout strong { color: #0078d4; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>Smart Data Visualization — Screenshot Guide</h1>
+    <p>Mockups of all screens and chart types. Open in a browser and screenshot each frame.</p>
+  </div>
+</div>
+
+<nav class="toc">
+  <a href="#ui-screens">UI Screens</a>
+  <a href="#bar">Bar</a>
+  <a href="#hbar">Horiz. Bar</a>
+  <a href="#line">Line</a>
+  <a href="#area">Area</a>
+  <a href="#scatter">Scatter</a>
+  <a href="#pie">Pie</a>
+  <a href="#doughnut">Doughnut</a>
+  <a href="#bubble">Bubble</a>
+  <a href="#radar">Radar</a>
+  <a href="#features">Features</a>
+</nav>
+
+<div class="content">
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 1 — UI SCREENS
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="ui-screens">UI Screens</h2>
+<p class="section-desc">Key states of the web part interface. Use <em>sample-data/monthly-sales.csv</em> to reproduce these in the live web part.</p>
+
+<!-- Screen 1A: Empty / data source panel open -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Screen 1A</span>
+    <span class="title">Edit mode — Data source panel open (no data loaded)</span>
+    <span class="hint">Upload source selected</span>
+  </div>
+  <div class="webpart">
+    <div class="config-toggle-row">
+      <button class="config-toggle-btn">▲ Hide Data Source</button>
+    </div>
+    <div class="edit-panel">
+      <div class="section-header">Data Source</div>
+      <div class="source-grid">
+        <div class="source-card selected"><span class="source-icon">📁</span><span class="source-label">Upload File</span></div>
+        <div class="source-card"><span class="source-icon">📋</span><span class="source-label">SharePoint List</span></div>
+        <div class="source-card"><span class="source-icon">🔗</span><span class="source-label">SharePoint File</span></div>
+        <div class="source-card"><span class="source-icon">🌐</span><span class="source-label">REST API</span></div>
+      </div>
+      <p class="help-text" style="margin-bottom:12px;">Upload a CSV, TSV, or Excel (.xlsx, .xls) file.</p>
+      <div>
+        <button class="btn-primary">Choose File…</button>
+      </div>
+    </div>
+    <div class="no-data-msg">
+      No data loaded yet. Configure your data source above and click <strong>Load Data</strong>.
+    </div>
+  </div>
+</div>
+
+<!-- Screen 1B: File loaded — banner visible, chart config open -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Screen 1B</span>
+    <span class="title">Edit mode — File loaded, column mapping visible</span>
+    <span class="hint">monthly-sales.csv uploaded</span>
+  </div>
+  <div class="webpart">
+    <div class="config-toggle-row">
+      <button class="config-toggle-btn">▲ Hide Data Source</button>
+    </div>
+    <div class="edit-panel">
+      <div class="section-header">Data Source</div>
+      <div class="source-grid">
+        <div class="source-card selected"><span class="source-icon">📁</span><span class="source-label">Upload File</span></div>
+        <div class="source-card"><span class="source-icon">📋</span><span class="source-label">SharePoint List</span></div>
+        <div class="source-card"><span class="source-icon">🔗</span><span class="source-label">SharePoint File</span></div>
+        <div class="source-card"><span class="source-icon">🌐</span><span class="source-label">REST API</span></div>
+      </div>
+      <div class="loaded-file-banner">
+        <span style="font-size:18px;">📁</span>
+        <span class="loaded-file-info"><strong>monthly-sales.csv</strong><span class="loaded-file-rows"> — 12 rows</span></span>
+        <div class="loaded-file-actions">
+          <button class="btn-secondary">Change File…</button>
+          <button class="btn-secondary">Clear</button>
+        </div>
+      </div>
+      <div style="color:#107c10;padding:8px 10px;background:#dff6dd;border-radius:3px;font-size:13px;margin-top:4px;">
+        ✓ Loaded 12 rows with 5 columns. Data will persist when you leave the page.
+      </div>
+    </div>
+    <!-- Column mapper mock -->
+    <div class="edit-panel">
+      <div class="section-header">Column Mapping</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field-group">
+          <label>X Axis (Category)</label>
+          <select><option>Month</option></select>
+        </div>
+        <div class="field-group">
+          <label>Y Axis (Values)</label>
+          <div style="border:1px solid #8a8886;border-radius:2px;background:white;max-height:120px;overflow-y:auto;padding:4px;">
+            <div style="display:flex;align-items:center;gap:6px;padding:3px 6px;background:#eff6fc;">
+              <input type="checkbox" checked readonly> <span>Revenue</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:3px 6px;">
+              <input type="checkbox" readonly> <span>Units</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:3px 6px;">
+              <input type="checkbox" readonly> <span>Target</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:3px 6px;">
+              <input type="checkbox" readonly> <span>Profit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Chart preview -->
+    <div class="chart-container">
+      <canvas id="screen1b" height="180"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 1C: Config collapsed, chart showing -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Screen 1C</span>
+    <span class="title">Edit mode — Config collapsed, chart visible</span>
+    <span class="hint">Typical working state after data is loaded</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Q1–Q4 Revenue Dashboard</span></div>
+    <div class="config-toggle-row">
+      <button class="config-toggle-btn">▼ Configure Data Source <span class="config-toggle-badge"> ✓ 12 rows loaded</span></button>
+    </div>
+    <div class="chart-container">
+      <canvas id="screen1c" height="220"></canvas>
+    </div>
+    <div class="export-bar">
+      <span class="export-label">Export:</span>
+      <button class="export-btn">🖼 PNG</button>
+      <button class="export-btn">🖼 JPEG</button>
+      <button class="export-btn">📄 CSV</button>
+      <button class="export-btn">📊 Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 1D: Preview / Read-only mode -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Screen 1D</span>
+    <span class="title">Preview / Read-only mode</span>
+    <span class="hint">No config UI — chart + refresh button only</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Q1–Q4 Revenue Dashboard</span></div>
+    <div class="chart-container">
+      <canvas id="screen1d" height="240"></canvas>
+    </div>
+    <div class="export-bar">
+      <span class="export-label">Export:</span>
+      <button class="export-btn">🖼 PNG</button>
+      <button class="export-btn">🖼 JPEG</button>
+      <button class="export-btn">📄 CSV</button>
+      <button class="export-btn">📊 Excel</button>
+    </div>
+    <div class="readonly-bar">
+      <button class="btn-refresh">↻ Refresh Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 2 — CHART TYPES
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="bar">Chart Types</h2>
+<p class="section-desc">All nine chart types with realistic sample data. Sample CSV files are in <code>sample-data/</code>.</p>
+
+<div class="chart-grid">
+
+  <!-- Bar (vertical) -->
+  <div class="screenshot-frame" id="bar" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 1</span>
+      <span class="title">Bar Chart — Vertical</span>
+      <span class="hint">monthly-sales.csv</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Monthly Revenue</span></div>
+      <div class="chart-container"><canvas id="c-bar" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horizontal bar -->
+  <div class="screenshot-frame" id="hbar" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 2</span>
+      <span class="title">Bar Chart — Horizontal</span>
+      <span class="hint">regional-sales.csv</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Revenue by Region</span></div>
+      <div class="chart-container"><canvas id="c-hbar" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Line -->
+  <div class="screenshot-frame" id="line" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 3</span>
+      <span class="title">Line Chart</span>
+      <span class="hint">monthly-sales.csv — Revenue + Target</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Revenue vs Target</span></div>
+      <div class="chart-container"><canvas id="c-line" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Area -->
+  <div class="screenshot-frame" id="area" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 4</span>
+      <span class="title">Area Chart</span>
+      <span class="hint">monthly-sales.csv — Revenue + Profit</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Revenue &amp; Profit Trend</span></div>
+      <div class="chart-container"><canvas id="c-area" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scatter -->
+  <div class="screenshot-frame" id="scatter" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 5</span>
+      <span class="title">Scatter Plot</span>
+      <span class="hint">scatter-rnd.csv — R&amp;D Spend vs Revenue</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">R&amp;D Spend vs Revenue</span></div>
+      <div class="chart-container"><canvas id="c-scatter" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bubble -->
+  <div class="screenshot-frame" id="bubble" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 6</span>
+      <span class="title">Bubble Chart</span>
+      <span class="hint">bubble-companies.csv — Revenue, Employees, Growth</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Company Size vs Revenue</span></div>
+      <div class="chart-container"><canvas id="c-bubble" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pie -->
+  <div class="screenshot-frame" id="pie" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 7</span>
+      <span class="title">Pie Chart</span>
+      <span class="hint">market-share.csv</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Market Share by Product</span></div>
+      <div class="chart-container"><canvas id="c-pie" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doughnut -->
+  <div class="screenshot-frame" id="doughnut" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 8</span>
+      <span class="title">Doughnut Chart</span>
+      <span class="hint">market-share.csv</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Market Share by Product</span></div>
+      <div class="chart-container"><canvas id="c-donut" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .chart-grid -->
+
+<!-- Radar — full width -->
+<div class="screenshot-frame" id="radar" style="margin-top:24px;">
+  <div class="screenshot-label">
+    <span class="badge">Chart 9</span>
+    <span class="title">Radar Chart</span>
+    <span class="hint">radar-products.csv — Multi-dimension product comparison</span>
+  </div>
+  <div class="webpart" style="max-width:600px;margin:0 auto;">
+    <div class="wp-header"><span class="wp-header-text">Product Comparison</span></div>
+    <div class="chart-container"><canvas id="c-radar" height="300"></canvas></div>
+    <div class="export-bar">
+      <span class="export-label">Export:</span>
+      <button class="export-btn">🖼 PNG</button>
+      <button class="export-btn">📄 CSV</button>
+      <button class="export-btn">📊 Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 3 — FEATURES
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="features">Features</h2>
+<p class="section-desc">Individual feature highlights for documentation.</p>
+
+<!-- Stacked bar -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Stacked Bar — Revenue + Profit stacked</span>
+    <span class="hint">Property pane: Stacked = On</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Revenue &amp; Profit (Stacked)</span></div>
+    <div class="chart-container"><canvas id="c-stacked" height="240"></canvas></div>
+    <div class="export-bar">
+      <span class="export-label">Export:</span>
+      <button class="export-btn">🖼 PNG</button>
+      <button class="export-btn">📄 CSV</button>
+      <button class="export-btn">📊 Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Data labels -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Data Labels — Revenue with $K abbreviation</span>
+    <span class="hint">Property pane: Show Data Labels = On, Prefix = $, Abbreviate = On</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Revenue with Labels</span></div>
+    <div class="chart-container"><canvas id="c-labels" height="260"></canvas></div>
+  </div>
+</div>
+
+<!-- Color palettes -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Color Palettes — All 7 palettes side by side</span>
+    <span class="hint">Property pane: Color Palette dropdown</span>
+  </div>
+  <div class="webpart">
+    <div id="palette-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;"></div>
+  </div>
+</div>
+
+<!-- Data table -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Data Table — Chart + table view</span>
+    <span class="hint">Property pane: Show Data Table = On</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Monthly Revenue</span></div>
+    <div class="chart-container"><canvas id="c-table-chart" height="180"></canvas></div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead><tr><th>Month</th><th>Revenue</th><th>Units</th><th>Target</th><th>Profit</th></tr></thead>
+        <tbody>
+          <tr><td>Jan</td><td>$285,000</td><td>142</td><td>$300,000</td><td>$48,000</td></tr>
+          <tr><td>Feb</td><td>$320,000</td><td>165</td><td>$300,000</td><td>$57,600</td></tr>
+          <tr><td>Mar</td><td>$298,000</td><td>148</td><td>$320,000</td><td>$52,200</td></tr>
+          <tr><td>Apr</td><td>$410,000</td><td>210</td><td>$380,000</td><td>$79,900</td></tr>
+          <tr><td>May</td><td>$387,000</td><td>195</td><td>$400,000</td><td>$73,500</td></tr>
+          <tr><td colspan="5" style="text-align:center;color:#797775;font-size:11px;padding:6px;">… 7 more rows</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SharePoint List source -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">SharePoint List — List discovery dropdown</span>
+    <span class="hint">Lists auto-discovered from the configured site</span>
+  </div>
+  <div class="webpart">
+    <div class="edit-panel">
+      <div class="section-header">Data Source</div>
+      <div class="source-grid">
+        <div class="source-card"><span class="source-icon">📁</span><span class="source-label">Upload File</span></div>
+        <div class="source-card selected"><span class="source-icon">📋</span><span class="source-label">SharePoint List</span></div>
+        <div class="source-card"><span class="source-icon">🔗</span><span class="source-label">SharePoint File</span></div>
+        <div class="source-card"><span class="source-icon">🌐</span><span class="source-label">REST API</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field-group">
+          <label>Site URL (optional)</label>
+          <input type="url" value="https://contoso.sharepoint.com/sites/Sales" readonly>
+          <span class="help-text">Leave blank to use the current site.</span>
+        </div>
+        <div class="field-group">
+          <label>List Name</label>
+          <select>
+            <option>— Select a list —</option>
+            <option selected>Monthly Sales Data</option>
+            <option>Product Catalog</option>
+            <option>Customer Contacts</option>
+            <option>Project Tracker</option>
+            <option>Budget Report</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:8px;"><button class="btn-primary">Load Data</button></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- .content -->
+
+<script>
+// ─── Shared data ───────────────────────────────────────────────────
+const months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const revenue  = [285,320,298,410,387,452,498,465,432,518,562,620];
+const target   = [300,300,320,380,400,430,460,460,440,500,540,600];
+const profit   = [48,57.6,52.2,79.9,73.5,90.4,101.5,93,85.2,108.8,118.6,135.2];
+const regions  = ['Northeast','Southeast','Midwest','Southwest','Northwest'];
+const regRev   = [428,356,312,285,398];
+const regBud   = [400,380,330,300,370];
+const pieLabels= ['Alpha','Beta','Gamma','Delta','Other'];
+const pieData  = [35,28,18,12,7];
+const scatterPts = [
+  {x:8.2,y:142},{x:15.6,y:298},{x:5.1,y:87},{x:22.4,y:445},{x:11.8,y:201},
+  {x:18.9,y:367},{x:3.4,y:58},{x:29.1,y:512},{x:9.7,y:178},{x:13.2,y:244},
+  {x:6.8,y:112},{x:35.4,y:628},{x:7.5,y:134},{x:24.8,y:489},{x:19.3,y:382}
+];
+const bubblePts = [
+  {x:245,y:1200,r:Math.max(5,Math.sqrt(18)*4)},
+  {x:412,y:2800,r:Math.max(5,Math.sqrt(8)*4)},
+  {x:98,y:520,r:Math.max(5,Math.sqrt(31)*4)},
+  {x:687,y:4100,r:Math.max(5,Math.sqrt(5)*4)},
+  {x:156,y:890,r:Math.max(5,Math.sqrt(24)*4)},
+  {x:328,y:1950,r:Math.max(5,Math.sqrt(12)*4)},
+  {x:512,y:3200,r:Math.max(5,Math.sqrt(7)*4)},
+  {x:189,y:1100,r:Math.max(5,Math.sqrt(19)*4)},
+  {x:78,y:380,r:Math.max(5,Math.sqrt(42)*4)},
+  {x:445,y:2600,r:Math.max(5,Math.sqrt(9)*4)},
+];
+const radarLabels = ['Efficacy','Safety','Tolerability','Dosing Conv.','Cost Effect.','Clinical Evid.'];
+const radarA = [88,92,79,65,71,94];
+const radarB = [72,85,88,90,68,76];
+const radarC = [95,78,82,70,85,88];
+
+// Office palette
+const P = {
+  office:      ['#0078d4','#00b4d8','#107c10','#ffb900','#d13438','#8764b8','#038387','#e3008c','#004578','#69797e'],
+  vibrant:     ['#e63946','#f4a261','#2a9d8f','#457b9d','#e9c46a','#264653','#a8dadc','#f77f00','#023e8a','#9b2226'],
+  pastel:      ['#a8d8ea','#aa96da','#fcbad3','#ffdac1','#b5ead7','#c7ceea','#e2f0cb','#ffb7b2','#ff9aa2','#ffffd2'],
+  monochrome:  ['#2d2d2d','#555555','#777777','#999999','#aaaaaa','#bbbbbb','#cccccc','#dddddd','#eeeeee','#f5f5f5'],
+  trafficLight:['#107c10','#bad80a','#ffb900','#f7630c','#d13438','#647687','#008299','#0078d4','#69797e','#323130'],
+  warm:        ['#d13438','#e74856','#f7630c','#ca5010','#ffb900','#f0a30a','#da3b01','#ef6950','#fce100','#fff100'],
+  cool:        ['#0078d4','#2b88d8','#00b4d8','#038387','#007a7a','#0d73dd','#086f68','#00bcf2','#008272','#004e8c'],
+};
+const c = P.office;
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: true,
+  animation: false,
+  plugins: {
+    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+    datalabels: { display: false },
+  },
+};
+
+// ─── Screen 1B & 1C & 1D (same bar data) ─────────────────────────
+['screen1b','screen1c','screen1d'].forEach(id => {
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Revenue ($K)',
+        data: revenue,
+        backgroundColor: c[0] + 'cc',
+        borderColor: c[0],
+        borderWidth: 2,
+      }]
+    },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, title: { display: false } } }
+  });
+});
+
+// ─── Chart 1: Vertical Bar ────────────────────────────────────────
+new Chart(document.getElementById('c-bar'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Revenue ($K)', data: revenue, backgroundColor: c[0]+'cc', borderColor: c[0], borderWidth: 2 },
+      { label: 'Profit ($K)',  data: profit,  backgroundColor: c[2]+'cc', borderColor: c[2], borderWidth: 2 },
+    ]
+  },
+  options: baseOpts,
+});
+
+// ─── Chart 2: Horizontal Bar ─────────────────────────────────────
+new Chart(document.getElementById('c-hbar'), {
+  type: 'bar',
+  data: {
+    labels: regions,
+    datasets: [
+      { label: 'Revenue ($K)', data: regRev, backgroundColor: c[0]+'cc', borderColor: c[0], borderWidth: 2 },
+      { label: 'Budget ($K)',  data: regBud, backgroundColor: c[4]+'cc', borderColor: c[4], borderWidth: 2 },
+    ]
+  },
+  options: { ...baseOpts, indexAxis: 'y' },
+});
+
+// ─── Chart 3: Line ────────────────────────────────────────────────
+new Chart(document.getElementById('c-line'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Revenue ($K)', data: revenue, borderColor: c[0], backgroundColor: c[0]+'20', tension: 0.3, pointRadius: 3 },
+      { label: 'Target ($K)',  data: target,  borderColor: c[3], backgroundColor: c[3]+'20', tension: 0.3, pointRadius: 3, borderDash: [6,3] },
+    ]
+  },
+  options: baseOpts,
+});
+
+// ─── Chart 4: Area ───────────────────────────────────────────────
+new Chart(document.getElementById('c-area'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Revenue ($K)', data: revenue, borderColor: c[0], backgroundColor: c[0]+'40', fill: true, tension: 0.3, pointRadius: 3 },
+      { label: 'Profit ($K)',  data: profit,  borderColor: c[2], backgroundColor: c[2]+'40', fill: true, tension: 0.3, pointRadius: 3 },
+    ]
+  },
+  options: baseOpts,
+});
+
+// ─── Chart 5: Scatter ────────────────────────────────────────────
+new Chart(document.getElementById('c-scatter'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Companies',
+      data: scatterPts,
+      backgroundColor: c[0]+'80',
+      borderColor: c[0],
+      pointRadius: 6,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    scales: {
+      x: { title: { display: true, text: 'R&D Spend ($M)' } },
+      y: { title: { display: true, text: 'Revenue ($M)' } },
+    },
+    plugins: { ...baseOpts.plugins, tooltip: { mode: 'point' } },
+  },
+});
+
+// ─── Chart 6: Bubble ─────────────────────────────────────────────
+new Chart(document.getElementById('c-bubble'), {
+  type: 'bubble',
+  data: {
+    datasets: [{
+      label: 'Companies (bubble = growth %)',
+      data: bubblePts,
+      backgroundColor: c[0]+'70',
+      borderColor: c[0],
+    }]
+  },
+  options: {
+    ...baseOpts,
+    scales: {
+      x: { title: { display: true, text: 'Revenue ($M)' } },
+      y: { title: { display: true, text: 'Employees' } },
+    },
+    plugins: { ...baseOpts.plugins, tooltip: { mode: 'point' } },
+  },
+});
+
+// ─── Chart 7: Pie ────────────────────────────────────────────────
+new Chart(document.getElementById('c-pie'), {
+  type: 'pie',
+  data: {
+    labels: pieLabels,
+    datasets: [{
+      data: pieData,
+      backgroundColor: c.slice(0,5).map(x => x+'cc'),
+      borderColor: c.slice(0,5),
+      borderWidth: 1,
+    }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { mode: 'point' } } },
+});
+
+// ─── Chart 8: Doughnut ───────────────────────────────────────────
+new Chart(document.getElementById('c-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: pieLabels,
+    datasets: [{
+      data: pieData,
+      backgroundColor: c.slice(0,5).map(x => x+'cc'),
+      borderColor: c.slice(0,5),
+      borderWidth: 1,
+    }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { mode: 'point' } } },
+});
+
+// ─── Chart 9: Radar ──────────────────────────────────────────────
+new Chart(document.getElementById('c-radar'), {
+  type: 'radar',
+  data: {
+    labels: radarLabels,
+    datasets: [
+      { label: 'Product A', data: radarA, backgroundColor: c[0]+'40', borderColor: c[0], borderWidth: 2, pointBackgroundColor: c[0] },
+      { label: 'Product B', data: radarB, backgroundColor: c[2]+'40', borderColor: c[2], borderWidth: 2, pointBackgroundColor: c[2] },
+      { label: 'Product C', data: radarC, backgroundColor: c[4]+'40', borderColor: c[4], borderWidth: 2, pointBackgroundColor: c[4] },
+    ]
+  },
+  options: { ...baseOpts, scales: { r: { beginAtZero: true, min: 0, max: 100, grid: { display: true } } } },
+});
+
+// ─── Feature: Stacked bar ─────────────────────────────────────────
+new Chart(document.getElementById('c-stacked'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Revenue ($K)', data: revenue, backgroundColor: c[0]+'cc', borderColor: c[0], borderWidth: 2, stack: 'stack' },
+      { label: 'Profit ($K)',  data: profit,  backgroundColor: c[2]+'cc', borderColor: c[2], borderWidth: 2, stack: 'stack' },
+    ]
+  },
+  options: { ...baseOpts, scales: { x: { stacked: true }, y: { stacked: true } } },
+});
+
+// ─── Feature: Data labels ────────────────────────────────────────
+ChartDataLabels; // ensure plugin loaded
+new Chart(document.getElementById('c-labels'), {
+  type: 'bar',
+  data: {
+    labels: months.slice(0, 6),
+    datasets: [{
+      label: 'Revenue',
+      data: revenue.slice(0, 6),
+      backgroundColor: c[0]+'cc',
+      borderColor: c[0],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    layout: { padding: { top: 24 } },
+    plugins: {
+      ...baseOpts.plugins,
+      datalabels: {
+        display: true,
+        anchor: 'end', align: 'top',
+        font: { size: 11, weight: 'bold' },
+        color: '#323130',
+        formatter: v => `$${(v/1000).toFixed(0)}K`,
+      },
+    },
+  },
+  plugins: [ChartDataLabels],
+});
+
+// ─── Feature: Color palettes (mini swatches) ─────────────────────
+const paletteGrid = document.getElementById('palette-grid');
+Object.entries(P).forEach(([name, colors]) => {
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;';
+  div.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:#323130;margin-bottom:6px;text-transform:capitalize;">${name}</div>
+    <canvas id="pal-${name}" height="80"></canvas>
+  `;
+  paletteGrid.appendChild(div);
+  setTimeout(() => {
+    new Chart(document.getElementById(`pal-${name}`), {
+      type: 'bar',
+      data: {
+        labels: ['J','F','M','A','M','J'],
+        datasets: [{
+          data: [4,6,5,8,7,9],
+          backgroundColor: colors.slice(0,6).map(c => c+'cc'),
+          borderColor: colors.slice(0,6),
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: false }, datalabels: { display: false } },
+        scales: { x: { display: false }, y: { display: false } },
+      },
+    });
+  }, 0);
+});
+
+// ─── Feature: Data table chart ───────────────────────────────────
+new Chart(document.getElementById('c-table-chart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{ label: 'Revenue ($K)', data: revenue, backgroundColor: c[0]+'cc', borderColor: c[0], borderWidth: 2 }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+</script>
+</body>
+</html>
