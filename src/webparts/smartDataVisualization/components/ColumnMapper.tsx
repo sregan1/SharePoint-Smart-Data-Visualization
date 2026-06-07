@@ -6,14 +6,37 @@ interface IColumnMapperProps {
   columns: string[];
   config: IColumnConfig;
   chartType: ChartType;
+  seriesColors: string;
   onChange: (config: Partial<IColumnConfig>) => void;
+  onSeriesColorsChange: (colors: string) => void;
 }
 
-const ColumnMapper: React.FC<IColumnMapperProps> = ({ columns, config, chartType, onChange }) => {
+const ColumnMapper: React.FC<IColumnMapperProps> = ({
+  columns,
+  config,
+  chartType,
+  seriesColors,
+  onChange,
+  onSeriesColorsChange,
+}) => {
   const isRadar = chartType === 'radar';
   const isPie = isPieOrDoughnut(chartType);
   const isScatterBubble = isScatterOrBubble(chartType);
   const isBubble = chartType === 'bubble';
+
+  const colorOverrides = seriesColors ? seriesColors.split(',') : [];
+
+  const getSeriesColor = (yColIndex: number): string => {
+    const c = colorOverrides[yColIndex] ? colorOverrides[yColIndex].trim() : '';
+    return c || '#0078d4';
+  };
+
+  const setSeriesColor = (yColIndex: number, hex: string) => {
+    const current = [...colorOverrides];
+    while (current.length <= yColIndex) current.push('');
+    current[yColIndex] = hex;
+    onSeriesColorsChange(current.join(','));
+  };
 
   const toggleYColumn = (col: string) => {
     const current = config.yColumns || [];
@@ -92,23 +115,36 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({ columns, config, chartType
       {!isPie && !isScatterBubble && (
         <div className={styles.fieldRow}>
           <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-            <label>{yLabel} <span className={styles.helpText}>(select one or more)</span></label>
+            <label>{yLabel} <span className={styles.helpText}>(select one or more; click swatch to set color)</span></label>
             <ul className={styles.multiSelect}>
-              {columns.map(col => (
-                <li
-                  key={col}
-                  className={config.yColumns?.includes(col) ? styles.selected : ''}
-                >
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={config.yColumns?.includes(col) || false}
-                      onChange={() => toggleYColumn(col)}
-                    />
-                    {col}
-                  </label>
-                </li>
-              ))}
+              {columns.map((col, colIdx) => {
+                const checked = config.yColumns?.includes(col) || false;
+                const yIdx = (config.yColumns || []).indexOf(col);
+                return (
+                  <li
+                    key={col}
+                    className={checked ? styles.selected : ''}
+                  >
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleYColumn(col)}
+                      />
+                      {col}
+                    </label>
+                    {checked && yIdx >= 0 && (
+                      <input
+                        type="color"
+                        className={styles.colorSwatch}
+                        value={getSeriesColor(yIdx)}
+                        onChange={e => setSeriesColor(yIdx, e.target.value)}
+                        title={`Color for ${col}`}
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

@@ -21,7 +21,7 @@
         "showLegend": true,
         "showDataTable": false,
         "stacked": false,
-        "dataSourceType": "paste",
+        "dataSourceType": "upload",
         "pastedData": "",
         "siteUrl": "",
         "listName": "",

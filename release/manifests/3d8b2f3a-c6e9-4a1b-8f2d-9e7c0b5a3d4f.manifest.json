@@ -30,7 +30,7 @@
         "showLegend": true,
         "showDataTable": false,
         "stacked": false,
-        "dataSourceType": "paste",
+        "dataSourceType": "upload",
         "pastedData": "",
         "siteUrl": "",
         "listName": "",
@@ -53,7 +53,7 @@
     "scriptResources": {
       "smart-data-visualization-web-part": {
         "type": "path",
-        "path": "smart-data-visualization-web-part.js"
+        "path": "smart-data-visualization-web-part_085724091fccd5f26325.js"
       },
       "react": {
         "type": "component",
@@ -82,7 +82,7 @@
       },
       "SmartDataVisualizationWebPartStrings": {
         "type": "path",
-        "path": "SmartDataVisualizationWebPartStrings_en-us.js"
+        "path": "SmartDataVisualizationWebPartStrings_en-us_96db71b4e572ca5a4280e85522c8d60b.js"
       }
     }
   }

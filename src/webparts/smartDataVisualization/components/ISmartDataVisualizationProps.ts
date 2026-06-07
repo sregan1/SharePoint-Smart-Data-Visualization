@@ -2,23 +2,52 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { ChartType, DataSourceType } from '../types';
 
 export interface ISmartDataVisualizationWebPartProps {
+  // Core chart settings
   chartType: ChartType;
   chartTitle: string;
   showLegend: boolean;
   showDataTable: boolean;
   stacked: boolean;
+  xAxisLabel: string;
+  yAxisLabel: string;
+  // Layout
+  legendPosition: string;
+  chartHeight: number;
+  showExportBar: boolean;
+  // Data source
   dataSourceType: DataSourceType;
   pastedData: string;
   siteUrl: string;
   listName: string;
   dataUrl: string;
   dataPath: string;
+  delimiter: string;
+  // Column mapping
   xColumn: string;
   yColumns: string;
   labelColumn: string;
   sizeColumn: string;
-  xAxisLabel: string;
-  yAxisLabel: string;
+  // Colors
+  colorPalette: string;
+  seriesColors: string;
+  // Data labels & formatting
+  showDataLabels: boolean;
+  valuePrefix: string;
+  valueSuffix: string;
+  valueDecimals: number;
+  abbreviateNumbers: boolean;
+  // Axes & grid
+  yAxisMin: string;
+  yAxisMax: string;
+  logScale: boolean;
+  showGridLines: boolean;
+  xLabelRotation: number;
+  // Data manipulation (inline controls)
+  sortColumn: string;
+  sortDirection: string;
+  rowLimit: number;
+  filterColumn: string;
+  filterValue: string;
 }
 
 export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWebPartProps {

@@ -22,6 +22,14 @@ interface IDataSourcePanelProps {
   onDataLoaded: (data: IChartRecord[], columns: string[]) => void;
 }
 
+const DELIMITER_OPTIONS = [
+  { value: '', label: 'Auto-detect' },
+  { value: ',', label: 'Comma (,)' },
+  { value: '\t', label: 'Tab' },
+  { value: ';', label: 'Semicolon (;)' },
+  { value: '|', label: 'Pipe (|)' },
+];
+
 const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   config,
   context,
@@ -31,14 +39,44 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
+  const [availableLists, setAvailableLists] = React.useState<string[]>([]);
+  const [isDiscovering, setIsDiscovering] = React.useState(false);
+  const [discoverError, setDiscoverError] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const sourceTypes: DataSourceType[] = ['upload', 'paste', 'sharePointList', 'sharePointFile', 'restApi'];
 
+  // Fetch available SharePoint lists when this source type is active
+  React.useEffect(() => {
+    if (config.dataSourceType !== 'sharePointList') return;
+    let cancelled = false;
+    const discover = async () => {
+      setIsDiscovering(true);
+      setDiscoverError('');
+      try {
+        const sp = spfi(config.siteUrl || context.pageContext.web.absoluteUrl).using(SPFx(context));
+        const lists = await sp.web.lists
+          .filter('Hidden eq false')
+          .select('Title')
+          .orderBy('Title', true)();
+        if (!cancelled) {
+          setAvailableLists((lists as Array<{ Title: string }>).map(l => l.Title));
+        }
+      } catch {
+        if (!cancelled) setDiscoverError('Could not load lists — enter name manually below.');
+      } finally {
+        if (!cancelled) setIsDiscovering(false);
+      }
+    };
+    discover();
+    return () => { cancelled = true; };
+  // Re-run if site URL changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.dataSourceType, config.siteUrl]);
+
   const extractColumns = (data: IChartRecord[]): string[] => {
     if (!data.length) return [];
-    const firstRow = data[0];
-    return Object.keys(firstRow).filter(
+    return Object.keys(data[0]).filter(
       k => !k.startsWith('odata.') && k !== '__metadata'
     );
   };
@@ -50,11 +88,12 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     onDataLoaded(data, columns);
   };
 
-  const parseCsvText = (text: string): IChartRecord[] => {
+  const parseCsvText = (text: string, delimiter?: string): IChartRecord[] => {
     const result = Papa.parse<IChartRecord>(text, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
+      delimiter: delimiter || undefined,
     });
     if (result.errors.length && !result.data.length) {
       throw new Error(result.errors[0].message);
@@ -88,13 +127,13 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     try {
       const name = file.name.toLowerCase();
       let data: IChartRecord[];
-      if (name.endsWith('.csv')) {
+      if (name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt')) {
         const text = await file.text();
-        data = parseCsvText(text);
+        data = parseCsvText(text, config.delimiter || undefined);
       } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
         data = await parseExcelFile(file);
       } else {
-        throw new Error('Unsupported file type. Please upload a .csv, .xlsx, or .xls file.');
+        throw new Error('Unsupported file type. Please upload a .csv, .tsv, .xlsx, or .xls file.');
       }
       handleDataLoaded(data);
     } catch (err) {
@@ -108,7 +147,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     setLoading(true);
     setError('');
     try {
-      const data = parseCsvText(config.pastedData);
+      const data = parseCsvText(config.pastedData, config.delimiter || undefined);
       handleDataLoaded(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse CSV');
@@ -119,7 +158,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
 
   const handleSharePointList = async () => {
     if (!config.listName) {
-      setError('Please enter a list name.');
+      setError('Please select or enter a list name.');
       return;
     }
     setLoading(true);
@@ -147,16 +186,15 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       const name = config.dataUrl.split('?')[0].toLowerCase();
       let data: IChartRecord[];
-      if (name.endsWith('.csv')) {
-        const text = await response.text();
-        data = parseCsvText(text);
-      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
         const buffer = await response.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         data = XLSX.utils.sheet_to_json<IChartRecord>(sheet);
       } else {
-        throw new Error('Cannot determine file type from URL. Ensure URL ends in .csv, .xlsx, or .xls');
+        // CSV, TSV, or unknown text — use delimiter setting
+        const text = await response.text();
+        data = parseCsvText(text, config.delimiter || undefined);
       }
       handleDataLoaded(data);
     } catch (err) {
@@ -204,6 +242,8 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     }
   };
 
+  const showDelimiter = config.dataSourceType === 'paste' || config.dataSourceType === 'sharePointFile';
+
   return (
     <div className={styles.editPanel}>
       <div className={styles.sectionHeader}>Data Source</div>
@@ -223,11 +263,11 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
 
       {config.dataSourceType === 'upload' && (
         <div>
-          <p className={styles.helpText}>Upload a CSV or Excel (.xlsx, .xls) file to visualize.</p>
+          <p className={styles.helpText}>Upload a CSV, TSV, or Excel (.xlsx, .xls) file.</p>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.tsv,.txt,.xlsx,.xls"
             style={{ display: 'none' }}
             onChange={handleFileUpload}
           />
@@ -237,14 +277,30 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       {config.dataSourceType === 'paste' && (
         <div className={styles.fieldRow}>
           <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-            <label>Paste CSV Data</label>
+            <label>Paste Delimited Data</label>
             <textarea
               value={config.pastedData}
               onChange={e => onConfigChange({ pastedData: e.target.value })}
               placeholder={'name,value,category\nAlpha,42,A\nBeta,87,B\nGamma,31,A'}
               rows={6}
             />
-            <span className={styles.helpText}>First row must be a header row. Values are comma-separated.</span>
+            <span className={styles.helpText}>First row must be a header row.</span>
+          </div>
+        </div>
+      )}
+
+      {showDelimiter && (
+        <div className={styles.fieldRow}>
+          <div className={styles.fieldGroup}>
+            <label>Delimiter</label>
+            <select
+              value={config.delimiter || ''}
+              onChange={e => onConfigChange({ delimiter: e.target.value })}
+            >
+              {DELIMITER_OPTIONS.map(opt => (
+                <option key={opt.label} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}
@@ -262,13 +318,26 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
             <span className={styles.helpText}>Leave blank to use the current site.</span>
           </div>
           <div className={styles.fieldGroup}>
-            <label>List Name</label>
-            <input
-              type="text"
-              value={config.listName}
-              onChange={e => onConfigChange({ listName: e.target.value })}
-              placeholder="e.g. Sales Data"
-            />
+            <label>List Name {isDiscovering && <span className={styles.helpText}> — Loading lists…</span>}</label>
+            {availableLists.length > 0 ? (
+              <select
+                value={config.listName}
+                onChange={e => onConfigChange({ listName: e.target.value })}
+              >
+                <option value="">— Select a list —</option>
+                {availableLists.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={config.listName}
+                onChange={e => onConfigChange({ listName: e.target.value })}
+                placeholder={discoverError ? 'Enter list name' : 'e.g. Sales Data'}
+              />
+            )}
+            {discoverError && <span className={styles.helpText}>{discoverError}</span>}
           </div>
         </div>
       )}
@@ -276,14 +345,14 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       {config.dataSourceType === 'sharePointFile' && (
         <div className={styles.fieldRow}>
           <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-            <label>File URL (CSV or Excel in SharePoint)</label>
+            <label>File URL (CSV/TSV/Excel in SharePoint)</label>
             <input
               type="url"
               value={config.dataUrl}
               onChange={e => onConfigChange({ dataUrl: e.target.value })}
               placeholder="https://yourtenant.sharepoint.com/sites/mysite/Shared Documents/data.csv"
             />
-            <span className={styles.helpText}>Full URL to a CSV or Excel file in a document library.</span>
+            <span className={styles.helpText}>Full URL to a file in a document library.</span>
           </div>
         </div>
       )}
