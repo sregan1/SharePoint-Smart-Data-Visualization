@@ -68,7 +68,7 @@ const FRAME_FILENAMES = [
     executablePath: CHROME,
     headless:       true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-first-run'],
-    defaultViewport: { width: 1280, height: 900 },
+    defaultViewport: { width: 960, height: 900 },
   });
 
   const page = await browser.newPage();
@@ -82,6 +82,13 @@ const FRAME_FILENAMES = [
     await page.waitForFunction(() => typeof window.Chart !== 'undefined', { timeout: 20000 });
     // chart animation is disabled so 1.5s is enough for layout to settle
     await wait(1500);
+
+    // Hide page chrome (sticky nav, TOC) — they're mockup scaffolding, not web part UI.
+    // Without this, the sticky header lands in the middle of tall element screenshots.
+    await page.addStyleTag({
+      content: '.page-header, .toc { display: none !important; }',
+    });
+    await wait(100);
 
     // Use ElementHandle.screenshot() — Puppeteer scrolls the element into view
     // automatically and clips exactly to its bounding box, avoiding manual
