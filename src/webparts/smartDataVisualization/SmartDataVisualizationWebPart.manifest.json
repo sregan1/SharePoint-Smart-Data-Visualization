@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/core-build/entry-point-bundle-definition.schema.json",
+  "id": "3d8b2f3a-c6e9-4a1b-8f2d-9e7c0b5a3d4f",
+  "alias": "SmartDataVisualizationWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+  "preconfiguredEntries": [
+    {
+      "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+      "group": { "default": "Other" },
+      "title": { "default": "Smart Data Visualization" },
+      "description": { "default": "Visualize data from CSV, Excel, SharePoint lists, REST APIs, and more with multiple chart types." },
+      "officeFabricIconFontName": "Chart",
+      "properties": {
+        "chartType": "bar",
+        "chartTitle": "Data Visualization",
+        "showLegend": true,
+        "showDataTable": false,
+        "stacked": false,
+        "dataSourceType": "paste",
+        "pastedData": "",
+        "siteUrl": "",
+        "listName": "",
+        "dataUrl": "",
+        "dataPath": "",
+        "xColumn": "",
+        "yColumns": "",
+        "labelColumn": "",
+        "sizeColumn": "",
+        "xAxisLabel": "",
+        "yAxisLabel": ""
+      }
+    }
+  ]
+}

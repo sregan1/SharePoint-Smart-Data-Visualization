@@ -1,0 +1,6 @@
+dist/
+lib/
+node_modules/
+.haste_cache
+.yo-rc.json
+*.sppkg
