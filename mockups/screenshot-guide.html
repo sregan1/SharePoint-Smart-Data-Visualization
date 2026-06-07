@@ -478,7 +478,7 @@
     </div>
     <div class="webpart">
       <div class="wp-header"><span class="wp-header-text">Revenue by Region</span></div>
-      <div class="chart-container"><canvas id="c-hbar" height="240"></canvas></div>
+      <div class="chart-container" style="position:relative;height:240px;"><canvas id="c-hbar"></canvas></div>
       <div class="export-bar">
         <span class="export-label">Export:</span>
         <button class="export-btn">🖼 PNG</button>
@@ -836,7 +836,16 @@ new Chart(document.getElementById('c-hbar'), {
       { label: 'Budget ($K)',  data: regBud, backgroundColor: c[4]+'cc', borderColor: c[4], borderWidth: 2 },
     ]
   },
-  options: { ...baseOpts, indexAxis: 'y' },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+      datalabels: { display: false },
+    },
+  },
 });
 
 // ─── Chart 3: Line ────────────────────────────────────────────────

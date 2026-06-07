@@ -44,7 +44,18 @@ A SharePoint Framework (SPFx) web part that renders interactive charts from mult
 
 ---
 
-## Prerequisites
+## Installation (No Build Required)
+
+The pre-built package is included in the repository. To deploy without installing Node.js or building anything:
+
+1. Download `sharepoint/solution/smart-data-visualization.sppkg` from this repository.
+2. Upload it to your **SharePoint App Catalog** (SharePoint Admin Center → Advanced → App Catalog → Apps for SharePoint).
+3. Check **Make this solution available to all sites** and click **Deploy**.
+4. On any modern SharePoint page, click **Edit** → **+** → search for **Smart Data Visualization**.
+
+---
+
+## Prerequisites (for Development Only)
 
 - Node.js 18.x (LTS)
 - npm 8+
