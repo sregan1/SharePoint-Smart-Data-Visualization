@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "smart-data-visualization-client-side-solution",
+    "id": "a8f3c2e1-b5d7-4f6e-9a2c-1d8e3f5b7c9a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "SharePoint Smart Solutions",
+      "websiteUrl": "http://sharepointsmartsolutions.com",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": ""
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "Visualize data from multiple sources with various chart types"
+      },
+      "longDescription": {
+        "default": "Smart Data Visualization web part for SharePoint - supports CSV, Excel, SharePoint lists, REST APIs, and more with bar, line, scatter, pie, and other chart types."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "Smart Data Visualization Feature",
+        "description": "Activates the Smart Data Visualization web part.",
+        "id": "c7f4d3e2-a6b8-4e5f-9c1d-2e7f8a0b3c5d",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/smart-data-visualization.sppkg"
+  }
+}

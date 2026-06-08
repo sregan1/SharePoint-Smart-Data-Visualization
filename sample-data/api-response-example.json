@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "source": "Sample REST API",
+    "generated": "2026-06-06",
+    "count": 8
+  },
+  "value": [
+    { "Quarter": "Q1 2023", "Revenue": 142000, "Expenses": 98000, "Profit": 44000 },
+    { "Quarter": "Q2 2023", "Revenue": 168000, "Expenses": 112000, "Profit": 56000 },
+    { "Quarter": "Q3 2023", "Revenue": 195000, "Expenses": 128000, "Profit": 67000 },
+    { "Quarter": "Q4 2023", "Revenue": 231000, "Expenses": 145000, "Profit": 86000 },
+    { "Quarter": "Q1 2024", "Revenue": 188000, "Expenses": 119000, "Profit": 69000 },
+    { "Quarter": "Q2 2024", "Revenue": 214000, "Expenses": 138000, "Profit": 76000 },
+    { "Quarter": "Q3 2024", "Revenue": 247000, "Expenses": 152000, "Profit": 95000 },
+    { "Quarter": "Q4 2024", "Revenue": 289000, "Expenses": 171000, "Profit": 118000 }
+  ]
+}

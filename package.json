@@ -1,0 +1,48 @@
+{
+  "name": "smart-data-visualization",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=16.13.0 <19.0.0"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "gulp bundle",
+    "clean": "gulp clean",
+    "test": "jest",
+    "screenshots": "node mockups/take-screenshots.js"
+  },
+  "dependencies": {
+    "@microsoft/sp-core-library": "~1.20.0",
+    "@microsoft/sp-lodash-subset": "~1.20.0",
+    "@microsoft/sp-office-ui-fabric-core": "~1.20.0",
+    "@microsoft/sp-property-pane": "~1.20.0",
+    "@microsoft/sp-webpart-base": "~1.20.0",
+    "@pnp/core": "~3.22.0",
+    "@pnp/sp": "~3.22.0",
+    "chart.js": "^4.4.0",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "papaparse": "^5.4.1",
+    "react": "17.0.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "17.0.1",
+    "xlsx": "0.18.5"
+  },
+  "devDependencies": {
+    "@microsoft/eslint-config-spfx": "~1.20.0",
+    "@microsoft/eslint-plugin-spfx": "~1.20.0",
+    "@microsoft/rush-stack-compiler-4.7": "~0.1.0",
+    "@microsoft/sp-build-web": "~1.20.0",
+    "@microsoft/sp-module-interfaces": "~1.20.0",
+    "@rushstack/eslint-config": "~3.3.0",
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "17.0.45",
+    "@types/react-dom": "17.0.17",
+    "@types/webpack-env": "~1.15.2",
+    "ajv": "^4.2.11",
+    "eslint": "^8.57.1",
+    "gulp": "~4.0.2",
+    "puppeteer-core": "^24.43.1",
+    "typescript": "~4.7.4"
+  }
+}
