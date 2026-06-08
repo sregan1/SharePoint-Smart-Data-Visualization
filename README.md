@@ -6,8 +6,6 @@ A SharePoint Framework (SPFx) web part that renders interactive charts from mult
 
 ![SPFx](https://img.shields.io/badge/SPFx-1.20-0078D4?logo=microsoft&logoColor=white) ![React](https://img.shields.io/badge/React-17-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-4.7-3178C6?logo=typescript&logoColor=white) ![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white)
 
-![Bubble chart showing Company Size vs. Revenue](screenshots/chart-bubble.png)
-
 ---
 
 ## Features
