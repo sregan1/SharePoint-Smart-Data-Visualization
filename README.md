@@ -1,6 +1,6 @@
 # Smart Data Visualization — SharePoint SPFx Web Part
 
-[🌐 Website](http://sharepointsmartsolutions.com/smart-visualizations) · [📖 User Guide](USER-GUIDE.md)
+[![Website](https://img.shields.io/badge/Website-sharepointsmartsolutions.com-blue)](http://sharepointsmartsolutions.com/smart-data-visualization) [![User Guide](https://img.shields.io/badge/User%20Guide-Read%20Now-green)](USER-GUIDE.md)
 
 A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required. Configure everything through the SharePoint page editor.
 
