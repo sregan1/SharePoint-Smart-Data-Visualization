@@ -48,26 +48,20 @@ A SharePoint Framework (SPFx) web part that renders interactive charts from mult
 
 ## Screenshots
 
+See [Chart Types](#chart-types) above for individual chart screenshots.
+
 | | |
 |---|---|
 | ![Data source — empty state](screenshots/datasource-empty.png) | ![Data source — file loaded](screenshots/datasource-file-loaded.png) |
 | **Data Source — Empty** | **Data Source — File Loaded** |
-| ![Hero chart with web part header](screenshots/hero-chart.png) | ![Gallery of all nine chart types](screenshots/chart-gallery.png) |
-| **Hero Chart** | **Chart Gallery** |
-| ![Vertical bar chart](screenshots/chart-bar.png) | ![Horizontal bar chart](screenshots/chart-hbar.png) |
-| **Bar Chart (Vertical)** | **Bar Chart (Horizontal)** |
-| ![Line chart](screenshots/chart-line.png) | ![Area chart](screenshots/chart-area.png) |
-| **Line Chart** | **Area Chart** |
-| ![Scatter plot](screenshots/chart-scatter.png) | ![Bubble chart](screenshots/chart-bubble.png) |
-| **Scatter Plot** | **Bubble Chart** |
-| ![Pie chart](screenshots/chart-pie.png) | ![Doughnut chart](screenshots/chart-doughnut.png) |
-| **Pie Chart** | **Doughnut Chart** |
-| ![Radar chart](screenshots/chart-radar.png) | ![Stacked bar chart](screenshots/feature-stacked.png) |
-| **Radar Chart** | **Stacked Mode** |
+| ![Hero chart with web part header](screenshots/hero-chart.png) | ![SharePoint list data source](screenshots/datasource-sharepoint-list.png) |
+| **Hero Chart** | **SharePoint List Source** |
 | ![Data labels on bar chart](screenshots/feature-data-labels.png) | ![Color palette swatches](screenshots/feature-palettes.png) |
 | **Data Labels** | **Color Palettes** |
-| ![Data table below chart](screenshots/feature-data-table.png) | ![SharePoint list data source](screenshots/datasource-sharepoint-list.png) |
-| **Data Table** | **SharePoint List Source** |
+| ![Data table below chart](screenshots/feature-data-table.png) | ![Stacked bar chart](screenshots/feature-stacked.png) |
+| **Data Table** | **Stacked Mode** |
+| ![Property pane — chart settings](screenshots/settings-chart-settings.png) | ![Property pane — data labels and axes](screenshots/settings-data-labels.png) |
+| **Property Pane — Chart Settings** | **Property Pane — Data Labels & Axes** |
 
 ---
 

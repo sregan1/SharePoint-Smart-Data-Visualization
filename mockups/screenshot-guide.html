@@ -223,6 +223,38 @@
       font-size: 12px; color: #323130;
     }
     .callout strong { color: #0078d4; }
+
+    /* Property pane mockup */
+    .pp-layout { display: flex; align-items: stretch; background: #f3f2f1; }
+    .pp-main { flex: 1; min-width: 0; padding: 20px; }
+    .pp-main-inner { background: white; border-radius: 4px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+    .pp-main-title { font-size: 18px; font-weight: 600; color: #323130; margin-bottom: 12px; }
+    .pp-chart-placeholder { height: 160px; background: linear-gradient(135deg, #eff6fc 0%, #deeafb 100%); border-radius: 4px; display: flex; align-items: flex-end; gap: 6px; padding: 12px; }
+    .pp-chart-bar { background: #0078d4cc; border-radius: 2px 2px 0 0; flex: 1; }
+
+    .property-pane { width: 320px; flex-shrink: 0; background: white; border-left: 1px solid #edebe9; box-shadow: -4px 0 12px rgba(0,0,0,.12); display: flex; flex-direction: column; }
+    .pp-header { padding: 14px 16px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #edebe9; }
+    .pp-header-title { font-size: 16px; font-weight: 600; color: #323130; }
+    .pp-close { background: none; border: none; cursor: default; font-size: 18px; color: #605e5c; padding: 2px 6px; line-height: 1; font-family: inherit; }
+    .pp-group { border-bottom: 1px solid #edebe9; }
+    .pp-group-hdr { padding: 10px 16px; font-size: 13px; font-weight: 700; color: #0078d4; background: #faf9f8; display: flex; align-items: center; justify-content: space-between; }
+    .pp-group-hdr.collapsed { color: #323130; }
+    .pp-chevron { font-size: 10px; color: #605e5c; }
+    .pp-group-body { padding: 10px 16px 4px; }
+    .pp-field { margin-bottom: 10px; }
+    .pp-field label { display: block; font-size: 12px; font-weight: 600; color: #323130; margin-bottom: 4px; }
+    .pp-field select, .pp-field input[type="text"], .pp-field input[type="number"] { width: 100%; padding: 5px 8px; border: 1px solid #8a8886; border-radius: 2px; font-size: 13px; color: #323130; background: white; font-family: inherit; }
+    .pp-toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pp-toggle-lbl { font-size: 12px; font-weight: 600; color: #323130; }
+    .pp-toggle { display: inline-flex; align-items: center; gap: 6px; }
+    .pp-track { width: 40px; height: 20px; border-radius: 10px; background: #c8c6c4; position: relative; flex-shrink: 0; }
+    .pp-track.on { background: #0078d4; }
+    .pp-thumb { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .1s; }
+    .pp-track.on .pp-thumb { left: 23px; }
+    .pp-toggle-val { font-size: 11px; color: #605e5c; }
+    .pp-slider-row { display: flex; align-items: center; gap: 8px; }
+    .pp-slider { flex: 1; }
+    .pp-slider-val { font-size: 12px; color: #323130; font-weight: 600; width: 36px; text-align: right; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -246,6 +278,7 @@
   <a href="#bubble">Bubble</a>
   <a href="#radar">Radar</a>
   <a href="#features">Features</a>
+  <a href="#settings">Settings</a>
 </nav>
 
 <div class="content">
@@ -286,6 +319,8 @@
       <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Color Palettes</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-palettes.png</td></tr>
       <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Data Table</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-data-table.png</td></tr>
       <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">SharePoint List config</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">datasource-sharepoint-list.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;">Property Pane — Chart Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">settings-chart-settings.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;">Property Pane — Data Labels &amp; Axes</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">settings-data-labels.png</td></tr>
       <tr><td style="padding:5px 10px;border:1px solid #edebe9;color:#797775;" colspan="3"><em>chart-gallery.png — capture the two-column grid in the "Chart Types" section showing all 8 smaller charts together (Charts 1–8). Crop tightly around the grid.</em></td></tr>
     </tbody>
   </table>
@@ -734,6 +769,199 @@
         </div>
       </div>
       <div style="margin-top:8px;"><button class="btn-primary">Load Data</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 4 — SETTINGS (PROPERTY PANE)
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="settings">Settings (Property Pane)</h2>
+<p class="section-desc">The SharePoint property pane as seen when a page is in Edit mode and the web part pencil icon is clicked.</p>
+
+<!-- Property pane: Chart Settings -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Settings</span>
+    <span class="title">Property Pane — Chart Settings</span>
+    <span class="hint">Chart type, height, legend, stacked mode, export</span>
+  </div>
+  <div class="pp-layout">
+    <div class="pp-main">
+      <div class="pp-main-inner">
+        <div class="pp-main-title">Monthly Revenue</div>
+        <div class="pp-chart-placeholder">
+          <div class="pp-chart-bar" style="height:58%"></div>
+          <div class="pp-chart-bar" style="height:78%"></div>
+          <div class="pp-chart-bar" style="height:67%"></div>
+          <div class="pp-chart-bar" style="height:96%"></div>
+          <div class="pp-chart-bar" style="height:87%"></div>
+          <div class="pp-chart-bar" style="height:100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="property-pane">
+      <div class="pp-header">
+        <span class="pp-header-title">Edit web part</span>
+        <button class="pp-close">✕</button>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Header <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Chart Settings <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-field">
+            <label>Chart Type</label>
+            <select><option>Bar (Vertical)</option></select>
+          </div>
+          <div class="pp-field">
+            <label>Chart Title</label>
+            <input type="text" placeholder="(optional title inside chart)">
+          </div>
+          <div class="pp-field">
+            <label>Chart Height (px)</label>
+            <div class="pp-slider-row">
+              <input type="range" class="pp-slider" min="200" max="800" value="400" style="pointer-events:none;">
+              <span class="pp-slider-val">400</span>
+            </div>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Legend</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+          <div class="pp-field">
+            <label>Legend Position</label>
+            <select><option>Bottom</option></select>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Stacked</span>
+            <span class="pp-toggle"><div class="pp-track"><div class="pp-thumb"></div></div><span class="pp-toggle-val">Off</span></span>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Data Table</span>
+            <span class="pp-toggle"><div class="pp-track"><div class="pp-thumb"></div></div><span class="pp-toggle-val">Off</span></span>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Export Bar</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+          <div class="pp-field">
+            <label>X Axis Label</label>
+            <input type="text" placeholder="(optional)">
+          </div>
+          <div class="pp-field">
+            <label>Y Axis Label</label>
+            <input type="text" placeholder="(optional)">
+          </div>
+        </div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Colors <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Data Labels <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Axes &amp; Grid <span class="pp-chevron">▼</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Property pane: Data Labels & Axes -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Settings</span>
+    <span class="title">Property Pane — Data Labels &amp; Axes</span>
+    <span class="hint">Data labels enabled: $ prefix, K abbreviation; Axes &amp; Grid options</span>
+  </div>
+  <div class="pp-layout">
+    <div class="pp-main">
+      <div class="pp-main-inner">
+        <div class="pp-main-title">Revenue with Labels</div>
+        <div class="pp-chart-placeholder">
+          <div class="pp-chart-bar" style="height:55%"></div>
+          <div class="pp-chart-bar" style="height:72%"></div>
+          <div class="pp-chart-bar" style="height:62%"></div>
+          <div class="pp-chart-bar" style="height:90%"></div>
+          <div class="pp-chart-bar" style="height:80%"></div>
+          <div class="pp-chart-bar" style="height:100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="property-pane">
+      <div class="pp-header">
+        <span class="pp-header-title">Edit web part</span>
+        <button class="pp-close">✕</button>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Header <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Chart Settings <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Colors <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-field">
+            <label>Color Palette</label>
+            <select><option>Office</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Data Labels <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Data Labels</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+          <div class="pp-field">
+            <label>Label Prefix</label>
+            <input type="text" value="$" readonly>
+          </div>
+          <div class="pp-field">
+            <label>Label Suffix</label>
+            <input type="text" placeholder="(optional)">
+          </div>
+          <div class="pp-field">
+            <label>Decimal Places</label>
+            <input type="number" value="0" min="0" max="4" style="width:80px;" readonly>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Abbreviate Large Numbers</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Axes &amp; Grid <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div class="pp-field" style="margin:0;">
+              <label>Y Axis Min</label>
+              <input type="text" placeholder="(auto)">
+            </div>
+            <div class="pp-field" style="margin:0;">
+              <label>Y Axis Max</label>
+              <input type="text" placeholder="(auto)">
+            </div>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Log Scale</span>
+            <span class="pp-toggle"><div class="pp-track"><div class="pp-thumb"></div></div><span class="pp-toggle-val">Off</span></span>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Grid Lines</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+          <div class="pp-field">
+            <label>X Label Rotation</label>
+            <select><option>0°</option></select>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

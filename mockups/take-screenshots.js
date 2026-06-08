@@ -56,6 +56,8 @@ const FRAME_FILENAMES = [
   'feature-palettes.png',           // Feature — Color Palettes
   'feature-data-table.png',         // Feature — Data Table
   'datasource-sharepoint-list.png', // Feature — SharePoint List
+  'settings-chart-settings.png',    // Settings — Property Pane: Chart Settings
+  'settings-data-labels.png',       // Settings — Property Pane: Data Labels & Axes
 ];
 
 // ── Main ─────────────────────────────────────────────────────────────────────
