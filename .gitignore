@@ -1,6 +1,37 @@
+# ── Build output ──────────────────────────────────────────────────
 dist/
 lib/
+release/
+temp/
+sharepoint/solution/debug/
+
+# ── Dependencies ───────────────────────────────────────────────────
 node_modules/
+
+# ── SPFx packaging ─────────────────────────────────────────────────
+# The .sppkg in sharepoint/solution/ is kept so users can install
+# without building from source (see README Installation section).
+# Only the debug build output is excluded.
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Yeoman / SPFx scaffold artifacts ──────────────────────────────
 .haste_cache
 .yo-rc.json
-*.sppkg
+
+# ── Editor & OS ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+.vs/
+.vscode/settings.json
+
+# ── Claude Code ───────────────────────────────────────────────────
+.claude/
+
+# ── Local environment overrides ────────────────────────────────────
+.env
+.env.local

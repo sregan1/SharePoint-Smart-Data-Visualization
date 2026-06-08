@@ -7,11 +7,11 @@
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "developer": {
-      "name": "",
-      "websiteUrl": "",
+      "name": "SharePoint Smart Solutions",
+      "websiteUrl": "http://sharepointsmartsolutions.com",
       "privacyUrl": "",
       "termsOfUseUrl": "",
-      "mpnId": "Undefined-1.19.0"
+      "mpnId": ""
     },
     "metadata": {
       "shortDescription": {

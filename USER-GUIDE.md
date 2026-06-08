@@ -198,19 +198,45 @@ Select from the **Chart Type** dropdown:
 
 Click the pencil/edit icon on the web part to open the property pane (right-side panel).
 
+**Display**
+
 | Setting | Description |
 |---|---|
-| **Chart Title** | Text displayed inside the chart area. Leave blank for no chart title. |
-| **Chart Type** | The visualization style (see above). |
-| **Show Legend** | Toggle the chart legend on/off. |
-| **Stacked** | For Bar and Line charts: stacks multiple series on top of each other instead of side by side. |
-| **Show Data Labels** | Displays the value of each data point on the chart. |
-| **Label Prefix / Suffix** | Text added before/after each data label (e.g., `$` prefix, `%` suffix). |
-| **Abbreviate Large Numbers** | Abbreviates 1,000 → 1K, 1,000,000 → 1M in data labels. |
+| **Chart Type** | The visualization style (see [Choosing a Chart Type](#4-choosing-a-chart-type)). |
+| **Chart Title** | Text displayed inside the chart canvas. Leave blank for no chart title. |
+| **Chart Height** | Height of the chart in pixels (drag the slider). Default is 400px. |
 | **Color Palette** | Choose from 7 palettes: Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool. |
-| **Show Data Table** | Displays the raw data in a paginated table below the chart. |
+| **Show Legend** | Toggle the chart legend on/off. |
+| **Legend Position** | Where the legend appears: Bottom, Top, Left, or Right. |
+| **Show Grid Lines** | Toggle horizontal and vertical grid lines inside the chart. |
+| **Show Export Bar** | Show or hide the PNG / JPEG / CSV / Excel export buttons below the chart. |
+
+**Series options**
+
+| Setting | Description |
+|---|---|
+| **Stacked** | For Bar and Line charts: stacks multiple series instead of placing them side by side. |
+
+**Axis options**
+
+| Setting | Description |
+|---|---|
 | **X Axis Label** | Label shown along the horizontal axis. |
 | **Y Axis Label** | Label shown along the vertical axis. |
+| **Y Axis Min** | Override the minimum value of the Y axis (leave blank for automatic). |
+| **Y Axis Max** | Override the maximum value of the Y axis (leave blank for automatic). |
+| **Log Scale** | Switch the Y axis to a logarithmic scale. Useful when values span several orders of magnitude. |
+| **X Label Rotation** | Angle (in degrees) to rotate X axis labels. Helpful when category names are long. |
+
+**Data labels**
+
+| Setting | Description |
+|---|---|
+| **Show Data Labels** | Display the value of each data point directly on the chart. |
+| **Label Prefix** | Text prepended to each data label (e.g., `$`). |
+| **Label Suffix** | Text appended to each data label (e.g., `%`). |
+| **Decimal Places** | Number of decimal places shown in data labels (0–4). |
+| **Abbreviate Large Numbers** | Abbreviates 1,000 → 1K and 1,000,000 → 1M in data labels. |
 
 All settings are saved with the page automatically.
 
