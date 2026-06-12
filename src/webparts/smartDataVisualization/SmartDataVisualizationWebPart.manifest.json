@@ -68,7 +68,18 @@
         "thresholdDirection": "below",
         "thresholdColor": "#d13438",
         "trendline": "none",
-        "trendWindow": 3
+        "trendWindow": 3,
+        "forecastPeriods": 0,
+        "referenceLineType": "none",
+        "referenceLineValue": "",
+        "referenceLineColor": "#666666",
+        "histogramBins": 10,
+        "showViewerFilters": false,
+        "detailsOnDemand": false,
+        "drillDownColumns": "",
+        "colorByColumn": "",
+        "tooltipColumns": "",
+        "bookmarks": ""
       }
     }
   ]

@@ -9,7 +9,15 @@ export type ChartType =
   | 'pie'
   | 'doughnut'
   | 'bubble'
-  | 'radar';
+  | 'radar'
+  | 'kpi'
+  | 'histogram'
+  | 'waterfall'
+  | 'boxplot'
+  | 'treemap'
+  | 'heatmap';
+
+export type ReferenceLineType = 'none' | 'fixed' | 'mean' | 'median';
 
 export type DataSourceType =
   | 'upload'
@@ -96,6 +104,32 @@ export const extractColumns = (rows: IChartRecord[]): string[] => {
   return columns.filter(c => !excluded.has(c));
 };
 
+// A saved view state (Spotfire-style bookmark): data-shaping settings + column mapping
+export interface IBookmark {
+  name: string;
+  state: {
+    sortColumn: string;
+    sortDirection: string;
+    rowLimit: number;
+    filterColumn: string;
+    filterValue: string;
+    groupByColumn: string;
+    aggregation: string;
+    xColumn: string;
+    yColumns: string;
+  };
+}
+
+export const parseBookmarks = (json: string): IBookmark[] => {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 // Substitute {0}, {1}, … placeholders in localized string templates.
 export const fmt = (template: string, ...args: (string | number)[]): string =>
   template.replace(/\{(\d+)\}/g, (match, idx) => {
@@ -136,3 +170,18 @@ export const isScatterOrBubble = (chartType: ChartType): boolean =>
 
 export const needsNumericX = (chartType: ChartType): boolean =>
   chartType === 'scatter' || chartType === 'bubble';
+
+// Chart types that take exactly one value (Y) column
+export const isSingleValueType = (chartType: ChartType): boolean =>
+  chartType === 'pie' || chartType === 'doughnut' || chartType === 'scatter' ||
+  chartType === 'bubble' || chartType === 'kpi' || chartType === 'waterfall' ||
+  chartType === 'boxplot' || chartType === 'treemap' || chartType === 'heatmap';
+
+// KPI shows a single aggregated number — no X axis at all
+export const hasNoXColumn = (chartType: ChartType): boolean => chartType === 'kpi';
+
+// Histogram bins its X column; no Y column needed
+export const hasNoYColumn = (chartType: ChartType): boolean => chartType === 'histogram';
+
+// Heatmap needs a second (row) category column
+export const needsRowColumn = (chartType: ChartType): boolean => chartType === 'heatmap';

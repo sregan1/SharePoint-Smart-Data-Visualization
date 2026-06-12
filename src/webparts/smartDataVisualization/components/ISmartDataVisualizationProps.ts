@@ -76,6 +76,21 @@ export interface ISmartDataVisualizationWebPartProps {
   // Analytics
   trendline: string;
   trendWindow: number;
+  forecastPeriods: number;
+  // Reference line
+  referenceLineType: string;
+  referenceLineValue: string;
+  referenceLineColor: string;
+  // Histogram
+  histogramBins: number;
+  // Interactivity
+  showViewerFilters: boolean;
+  detailsOnDemand: boolean;
+  drillDownColumns: string;
+  // Spotfire-style extras (inline Advanced Options)
+  colorByColumn: string;
+  tooltipColumns: string;
+  bookmarks: string;
 }
 
 export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWebPartProps {

@@ -127,6 +127,21 @@ export default class SmartDataVisualizationWebPart
         // Analytics
         trendline: p.trendline || 'none',
         trendWindow: p.trendWindow || 3,
+        forecastPeriods: p.forecastPeriods || 0,
+        // Reference line
+        referenceLineType: p.referenceLineType || 'none',
+        referenceLineValue: p.referenceLineValue || '',
+        referenceLineColor: p.referenceLineColor || '#666666',
+        // Histogram
+        histogramBins: p.histogramBins || 10,
+        // Interactivity
+        showViewerFilters: p.showViewerFilters || false,
+        detailsOnDemand: p.detailsOnDemand || false,
+        drillDownColumns: p.drillDownColumns || '',
+        // Spotfire-style extras
+        colorByColumn: p.colorByColumn || '',
+        tooltipColumns: p.tooltipColumns || '',
+        bookmarks: p.bookmarks || '',
         // Framework
         context: this.context,
         isDarkTheme: this._isDarkTheme,
@@ -182,6 +197,12 @@ export default class SmartDataVisualizationWebPart
       { key: 'doughnut', text: strings.ChartTypeDoughnutLabel },
       { key: 'bubble', text: strings.ChartTypeBubbleLabel },
       { key: 'radar', text: strings.ChartTypeRadarLabel },
+      { key: 'kpi', text: strings.ChartTypeKpiLabel },
+      { key: 'histogram', text: strings.ChartTypeHistogramLabel },
+      { key: 'waterfall', text: strings.ChartTypeWaterfallLabel },
+      { key: 'boxplot', text: strings.ChartTypeBoxplotLabel },
+      { key: 'treemap', text: strings.ChartTypeTreemapLabel },
+      { key: 'heatmap', text: strings.ChartTypeHeatmapLabel },
     ];
 
     const legendPositions = [
@@ -266,8 +287,22 @@ export default class SmartDataVisualizationWebPart
                   label: strings.YAxisLabelFieldLabel,
                   placeholder: strings.YAxisPlaceholder,
                 }),
+                PropertyPaneSlider('histogramBins', {
+                  label: strings.HistogramBinsFieldLabel,
+                  min: 4,
+                  max: 50,
+                  step: 1,
+                  value: this.properties.histogramBins || 10,
+                  disabled: this.properties.chartType !== 'histogram',
+                }),
               ],
             },
+          ],
+        },
+        {
+          header: { description: strings.AppearancePageDescription },
+          displayGroupsAsAccordion: true,
+          groups: [
             {
               groupName: strings.ColorsGroupName,
               groupFields: [
@@ -345,6 +380,12 @@ export default class SmartDataVisualizationWebPart
                 }),
               ],
             },
+          ],
+        },
+        {
+          header: { description: strings.AdvancedPageDescription },
+          displayGroupsAsAccordion: true,
+          groups: [
             {
               groupName: strings.AnalyticsGroupName,
               groupFields: [
@@ -364,6 +405,52 @@ export default class SmartDataVisualizationWebPart
                   step: 1,
                   value: this.properties.trendWindow || 3,
                   disabled: this.properties.trendline !== 'movingAverage',
+                }),
+                PropertyPaneSlider('forecastPeriods', {
+                  label: strings.ForecastPeriodsFieldLabel,
+                  min: 0,
+                  max: 12,
+                  step: 1,
+                  value: this.properties.forecastPeriods || 0,
+                  disabled: this.properties.trendline !== 'linear',
+                }),
+              ],
+            },
+            {
+              groupName: strings.ReferenceLineGroupName,
+              groupFields: [
+                PropertyPaneDropdown('referenceLineType', {
+                  label: strings.ReferenceLineTypeFieldLabel,
+                  options: [
+                    { key: 'none', text: strings.TrendlineNone },
+                    { key: 'fixed', text: strings.RefLineFixed },
+                    { key: 'mean', text: strings.RefLineMean },
+                    { key: 'median', text: strings.RefLineMedian },
+                  ],
+                  selectedKey: this.properties.referenceLineType || 'none',
+                }),
+                PropertyPaneTextField('referenceLineValue', {
+                  label: strings.ReferenceLineValueFieldLabel,
+                  placeholder: strings.AutoPlaceholder,
+                  disabled: this.properties.referenceLineType !== 'fixed',
+                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
+                }),
+                PropertyPaneTextField('referenceLineColor', {
+                  label: strings.ReferenceLineColorFieldLabel,
+                  placeholder: '#666666',
+                }),
+              ],
+            },
+            {
+              groupName: strings.InteractivityGroupName,
+              groupFields: [
+                PropertyPaneToggle('showViewerFilters', {
+                  label: strings.ShowViewerFiltersFieldLabel,
+                  checked: this.properties.showViewerFilters || false,
+                }),
+                PropertyPaneToggle('detailsOnDemand', {
+                  label: strings.DetailsOnDemandFieldLabel,
+                  checked: this.properties.detailsOnDemand || false,
                 }),
               ],
             },

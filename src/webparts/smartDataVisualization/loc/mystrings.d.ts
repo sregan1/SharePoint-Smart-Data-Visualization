@@ -29,6 +29,15 @@ declare interface ISmartDataVisualizationWebPartStrings {
   ChartTypeDoughnutLabel: string;
   ChartTypeBubbleLabel: string;
   ChartTypeRadarLabel: string;
+  ChartTypeKpiLabel: string;
+  ChartTypeHistogramLabel: string;
+  ChartTypeWaterfallLabel: string;
+  ChartTypeBoxplotLabel: string;
+  ChartTypeTreemapLabel: string;
+  ChartTypeHeatmapLabel: string;
+  HistogramBinsFieldLabel: string;
+  AppearancePageDescription: string;
+  AdvancedPageDescription: string;
   // Legend position options
   LegendTopLabel: string;
   LegendBottomLabel: string;
@@ -75,6 +84,26 @@ declare interface ISmartDataVisualizationWebPartStrings {
   TrendlineMovingAverage: string;
   TrendWindowFieldLabel: string;
   TrendSuffix: string;
+  ForecastPeriodsFieldLabel: string;
+  // Reference line
+  ReferenceLineGroupName: string;
+  ReferenceLineTypeFieldLabel: string;
+  ReferenceLineValueFieldLabel: string;
+  ReferenceLineColorFieldLabel: string;
+  RefLineFixed: string;
+  RefLineMean: string;
+  RefLineMedian: string;
+  // Interactivity
+  InteractivityGroupName: string;
+  ShowViewerFiltersFieldLabel: string;
+  DetailsOnDemandFieldLabel: string;
+  ViewerFilterLabel: string;
+  ViewerFilterColumnAria: string;
+  ViewerFilterValueAria: string;
+  DrillAllLabel: string;
+  DetailsChipLabel: string;
+  // KPI
+  KpiSubLabel: string;
   // Conditional formatting
   ConditionalGroupName: string;
   ThresholdValueFieldLabel: string;
@@ -173,6 +202,26 @@ declare interface ISmartDataVisualizationWebPartStrings {
   SeriesTypeDefault: string;
   SeriesTypeBar: string;
   SeriesTypeLine: string;
+  HistogramColumnLabel: string;
+  TreemapGroupLabel: string;
+  HeatmapColumnLabel: string;
+  HeatmapRowLabel: string;
+  // Advanced options panel
+  AdvancedOptionsClosed: string;
+  AdvancedOptionsOpen: string;
+  ColorByLabel: string;
+  ColorByHelp: string;
+  TooltipColumnsLabel: string;
+  TooltipColumnsHelp: string;
+  DrillLevelLabel: string;
+  DrillDownHelp: string;
+  BookmarksLabel: string;
+  BookmarkNameLabel: string;
+  BookmarkNamePlaceholder: string;
+  SaveBookmarkButton: string;
+  ApplyBookmarkButton: string;
+  DeleteBookmarkButton: string;
+  ApplyBookmarkPlaceholder: string;
   // Data controls
   DataControlsSectionHeader: string;
   SortByColumnLabel: string;

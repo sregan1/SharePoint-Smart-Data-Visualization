@@ -1,6 +1,16 @@
 import * as React from 'react';
 import * as strings from 'SmartDataVisualizationWebPartStrings';
-import { ChartType, IColumnConfig, isPieOrDoughnut, isScatterOrBubble, fmt } from '../types';
+import {
+  ChartType,
+  IColumnConfig,
+  isPieOrDoughnut,
+  isScatterOrBubble,
+  isSingleValueType,
+  hasNoXColumn,
+  hasNoYColumn,
+  needsRowColumn,
+  fmt,
+} from '../types';
 import styles from './SmartDataVisualization.module.scss';
 
 interface IColumnMapperProps {
@@ -66,28 +76,61 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
     onChange({ yColumns: next });
   };
 
-  const xLabel = isRadar ? strings.CategoryColumnLabel : isPie ? strings.LabelColumnLabel : strings.XAxisColumnLabel;
-  const yLabel = isPie ? strings.ValueColumnLabel : isScatterBubble ? strings.YAxisColumnLabel : strings.YAxisColumnsLabel;
+  const showX = !hasNoXColumn(chartType);
+  const showY = !hasNoYColumn(chartType);
+  const showRowColumn = needsRowColumn(chartType);
+  const singleY = isSingleValueType(chartType);
+
+  const xLabel =
+    isRadar ? strings.CategoryColumnLabel :
+    isPie ? strings.LabelColumnLabel :
+    chartType === 'histogram' ? strings.HistogramColumnLabel :
+    chartType === 'treemap' ? strings.TreemapGroupLabel :
+    chartType === 'heatmap' ? strings.HeatmapColumnLabel :
+    chartType === 'waterfall' || chartType === 'boxplot' ? strings.CategoryColumnLabel :
+    strings.XAxisColumnLabel;
+  const yLabel =
+    isScatterBubble ? strings.YAxisColumnLabel :
+    singleY ? strings.ValueColumnLabel :
+    strings.YAxisColumnsLabel;
 
   return (
     <div className={styles.editPanel}>
       <div className={styles.sectionHeader}>{strings.ColumnMappingSectionHeader}</div>
       <div className={styles.fieldRow}>
-        <div className={styles.fieldGroup}>
-          <label htmlFor={`${idPrefix}-x`}>{xLabel}</label>
-          <select
-            id={`${idPrefix}-x`}
-            value={config.xColumn}
-            onChange={e => onChange({ xColumn: e.target.value })}
-          >
-            <option value="">{strings.SelectColumnPlaceholder}</option>
-            {columns.map(col => (
-              <option key={col} value={col}>{col}</option>
-            ))}
-          </select>
-        </div>
+        {showX && (
+          <div className={styles.fieldGroup}>
+            <label htmlFor={`${idPrefix}-x`}>{xLabel}</label>
+            <select
+              id={`${idPrefix}-x`}
+              value={config.xColumn}
+              onChange={e => onChange({ xColumn: e.target.value })}
+            >
+              <option value="">{strings.SelectColumnPlaceholder}</option>
+              {columns.map(col => (
+                <option key={col} value={col}>{col}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {(isPie || isScatterBubble) && (
+        {showRowColumn && (
+          <div className={styles.fieldGroup}>
+            <label htmlFor={`${idPrefix}-row`}>{strings.HeatmapRowLabel}</label>
+            <select
+              id={`${idPrefix}-row`}
+              value={config.labelColumn}
+              onChange={e => onChange({ labelColumn: e.target.value })}
+            >
+              <option value="">{strings.SelectColumnPlaceholder}</option>
+              {columns.map(col => (
+                <option key={col} value={col}>{col}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {singleY && showY && (
           <div className={styles.fieldGroup}>
             <label htmlFor={`${idPrefix}-y`}>{yLabel}</label>
             <select
@@ -120,7 +163,7 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
         )}
       </div>
 
-      {!isPie && !isScatterBubble && (
+      {!singleY && showY && (
         <div className={styles.fieldRow}>
           <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
             <label>{yLabel} <span className={styles.helpText}>{strings.YAxisColumnsHelp}</span></label>

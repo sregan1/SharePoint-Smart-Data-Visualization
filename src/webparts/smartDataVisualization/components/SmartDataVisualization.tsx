@@ -1,7 +1,16 @@
 import * as React from 'react';
 import * as strings from 'SmartDataVisualizationWebPartStrings';
-import { ISmartDataVisualizationProps } from './ISmartDataVisualizationProps';
-import { IChartRecord, IColumnConfig, IDataSourceConfig, extractColumns, fmt } from '../types';
+import { ISmartDataVisualizationProps, IChartSelection } from './ISmartDataVisualizationProps';
+import {
+  IChartRecord,
+  IColumnConfig,
+  IDataSourceConfig,
+  IBookmark,
+  parseBookmarks,
+  extractColumns,
+  fmt,
+} from '../types';
+import AdvancedOptions from './AdvancedOptions';
 import {
   loadSharePointList,
   loadSharePointFile,
@@ -35,6 +44,16 @@ interface ISmartDataVisualizationState {
   aggregation: string;
   seriesColors: string;
   seriesTypes: string;
+  // Advanced options (inline-edited, mirrored from properties)
+  colorByColumn: string;
+  tooltipColumns: string;
+  drillDownColumns: string;
+  bookmarks: string;
+  // View-only interaction state (never persisted)
+  viewerFilterColumn: string;
+  viewerFilterValue: string;
+  drillPath: string[];
+  detailCategory: string;
   // Persisted upload state
   uploadedFileName: string;
 }
@@ -164,6 +183,14 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       aggregation: props.aggregation || 'none',
       seriesColors: props.seriesColors || '',
       seriesTypes: props.seriesTypes || '',
+      colorByColumn: props.colorByColumn || '',
+      tooltipColumns: props.tooltipColumns || '',
+      drillDownColumns: props.drillDownColumns || '',
+      bookmarks: props.bookmarks || '',
+      viewerFilterColumn: '',
+      viewerFilterValue: '',
+      drillPath: [],
+      detailCategory: '',
       uploadedFileName: props.uploadedFileName || '',
       dataSourceConfig: {
         dataSourceType: srcType,
@@ -338,6 +365,94 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     onPropertiesUpdate({ seriesTypes: types });
   };
 
+  const handleAdvancedChange = (partial: {
+    colorByColumn?: string; tooltipColumns?: string; drillDownColumns?: string; bookmarks?: string;
+  }) => {
+    setState(prev => ({
+      ...prev,
+      ...partial,
+      // Hierarchy change invalidates the current drill position
+      ...(partial.drillDownColumns !== undefined ? { drillPath: [] } : {}),
+    }));
+    onPropertiesUpdate(partial);
+  };
+
+  // ---- Drill-down ----
+
+  const drillLevels = state.drillDownColumns
+    ? state.drillDownColumns.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const drillActive = drillLevels.length > 0;
+  const drillLevelIndex = Math.min(state.drillPath.length, drillLevels.length - 1);
+
+  const handleItemSelected = (selection: IChartSelection) => {
+    props.onItemSelected(selection);
+    const canDrillDeeper = drillActive && state.drillPath.length < drillLevels.length - 1;
+    if (canDrillDeeper) {
+      setState(prev => ({ ...prev, drillPath: [...prev.drillPath, selection.category], detailCategory: '' }));
+    } else if (props.detailsOnDemand) {
+      setState(prev => ({ ...prev, detailCategory: selection.category }));
+    }
+  };
+
+  const handleDrillTo = (depth: number) => {
+    setState(prev => ({ ...prev, drillPath: prev.drillPath.slice(0, depth), detailCategory: '' }));
+  };
+
+  // ---- Bookmarks ----
+
+  const bookmarkList: IBookmark[] = parseBookmarks(state.bookmarks);
+
+  const handleSaveBookmark = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const bookmark: IBookmark = {
+      name: trimmed,
+      state: {
+        sortColumn: state.sortColumn,
+        sortDirection: state.sortDirection,
+        rowLimit: state.rowLimit,
+        filterColumn: state.filterColumn,
+        filterValue: state.filterValue,
+        groupByColumn: state.groupByColumn,
+        aggregation: state.aggregation,
+        xColumn: state.columnConfig.xColumn,
+        yColumns: state.columnConfig.yColumns.join(','),
+      },
+    };
+    const next = bookmarkList.filter(b => b.name !== trimmed).concat(bookmark);
+    handleAdvancedChange({ bookmarks: JSON.stringify(next) });
+  };
+
+  const handleDeleteBookmark = (name: string) => {
+    handleAdvancedChange({ bookmarks: JSON.stringify(bookmarkList.filter(b => b.name !== name)) });
+  };
+
+  const handleApplyBookmark = (name: string) => {
+    const bookmark = bookmarkList.filter(b => b.name === name)[0];
+    if (!bookmark) return;
+    const s = bookmark.state;
+    const nextConfig: IColumnConfig = {
+      ...columnConfigRef.current,
+      xColumn: s.xColumn || columnConfigRef.current.xColumn,
+      yColumns: s.yColumns ? s.yColumns.split(',').filter(Boolean) : columnConfigRef.current.yColumns,
+    };
+    columnConfigRef.current = nextConfig;
+    setState(prev => ({
+      ...prev,
+      sortColumn: s.sortColumn ?? prev.sortColumn,
+      sortDirection: s.sortDirection ?? prev.sortDirection,
+      rowLimit: s.rowLimit ?? prev.rowLimit,
+      filterColumn: s.filterColumn ?? prev.filterColumn,
+      filterValue: s.filterValue ?? prev.filterValue,
+      groupByColumn: s.groupByColumn ?? prev.groupByColumn,
+      aggregation: s.aggregation ?? prev.aggregation,
+      columnConfig: nextConfig,
+      drillPath: [],
+      detailCategory: '',
+    }));
+  };
+
   const handleDataControlsChange = (partial: {
     sortColumn?: string; sortDirection?: string; rowLimit?: number;
     filterColumn?: string; filterValue?: string;
@@ -363,7 +478,9 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     setRefreshKey(k => k + 1);
   };
 
-  const processedData = React.useMemo(() => {
+  // Raw rows after author filter, viewer filter, and drill-down filters — but
+  // before aggregation. Details-on-demand shows these underlying rows.
+  const filteredRows = React.useMemo(() => {
     let result = [...state.data];
     if (state.filterColumn && state.filterValue) {
       const lc = state.filterValue.toLowerCase();
@@ -371,7 +488,28 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         String(r[state.filterColumn] ?? '').toLowerCase().includes(lc)
       );
     }
-    result = aggregateRows(result, state.groupByColumn, state.aggregation);
+    if (state.viewerFilterColumn && state.viewerFilterValue) {
+      const lc = state.viewerFilterValue.toLowerCase();
+      result = result.filter(r =>
+        String(r[state.viewerFilterColumn] ?? '').toLowerCase().includes(lc)
+      );
+    }
+    state.drillPath.forEach((value, i) => {
+      const col = drillLevels[i];
+      if (col) result = result.filter(r => String(r[col] ?? '') === value);
+    });
+    return result;
+  }, [state.data, state.filterColumn, state.filterValue, state.viewerFilterColumn,
+      state.viewerFilterValue, state.drillPath, state.drillDownColumns]);
+
+  // While drilling, the active hierarchy level becomes the grouping/X column
+  const effectiveGroupBy = drillActive ? drillLevels[drillLevelIndex] : state.groupByColumn;
+  const effectiveAggregation = drillActive
+    ? (state.aggregation !== 'none' ? state.aggregation : 'sum')
+    : state.aggregation;
+
+  const processedData = React.useMemo(() => {
+    let result = aggregateRows(filteredRows, effectiveGroupBy, effectiveAggregation);
     if (state.sortColumn) {
       result = [...result].sort((a, b) => {
         const av = a[state.sortColumn];
@@ -384,12 +522,21 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     }
     if (state.rowLimit > 0) result = result.slice(0, state.rowLimit);
     return result;
-  }, [state.data, state.filterColumn, state.filterValue, state.sortColumn, state.sortDirection,
-      state.rowLimit, state.groupByColumn, state.aggregation]);
+  }, [filteredRows, effectiveGroupBy, effectiveAggregation, state.sortColumn,
+      state.sortDirection, state.rowLimit]);
 
   const { columns, dataSourceConfig, columnConfig, autoLoadError, isLoading, isConfigOpen, seriesColors } = state;
   const hasData = state.data.length > 0;
   const srcType = props.dataSourceType || 'upload';
+
+  const effectiveColumnConfig: IColumnConfig = drillActive
+    ? { ...columnConfig, xColumn: drillLevels[drillLevelIndex] }
+    : columnConfig;
+
+  const detailXColumn = effectiveColumnConfig.xColumn;
+  const detailRows = state.detailCategory
+    ? filteredRows.filter(r => String(r[detailXColumn] ?? '') === state.detailCategory)
+    : [];
 
   return (
     <div className={styles.container}>
@@ -450,9 +597,87 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   onChange={handleDataControlsChange}
                 />
               )}
+              {hasData && columns.length > 0 && (
+                <AdvancedOptions
+                  columns={columns}
+                  chartType={chartType}
+                  colorByColumn={state.colorByColumn}
+                  tooltipColumns={state.tooltipColumns}
+                  drillDownColumns={state.drillDownColumns}
+                  bookmarks={bookmarkList}
+                  onChange={handleAdvancedChange}
+                  onSaveBookmark={handleSaveBookmark}
+                  onApplyBookmark={handleApplyBookmark}
+                  onDeleteBookmark={handleDeleteBookmark}
+                />
+              )}
             </>
           )}
         </>
+      )}
+
+      {isReadOnly && props.showViewerFilters && hasData && columns.length > 0 && (
+        <div className={styles.viewerFilterBar}>
+          <span className={styles.viewerFilterLabel}>{strings.ViewerFilterLabel}</span>
+          <select
+            value={state.viewerFilterColumn}
+            onChange={e => setState(prev => ({ ...prev, viewerFilterColumn: e.target.value, viewerFilterValue: '' }))}
+            aria-label={strings.ViewerFilterColumnAria}
+          >
+            <option value="">{strings.NoneOption}</option>
+            {columns.map(col => <option key={col} value={col}>{col}</option>)}
+          </select>
+          <input
+            type="text"
+            value={state.viewerFilterValue}
+            onChange={e => setState(prev => ({ ...prev, viewerFilterValue: e.target.value }))}
+            placeholder={strings.FilterValuePlaceholder}
+            disabled={!state.viewerFilterColumn}
+            aria-label={strings.ViewerFilterValueAria}
+          />
+          {(state.viewerFilterColumn || state.viewerFilterValue) && (
+            <button
+              className={styles.secondaryButton}
+              onClick={() => setState(prev => ({ ...prev, viewerFilterColumn: '', viewerFilterValue: '' }))}
+            >
+              {strings.ClearButton}
+            </button>
+          )}
+        </div>
+      )}
+
+      {isReadOnly && bookmarkList.length > 0 && (
+        <div className={styles.viewerFilterBar}>
+          <span className={styles.viewerFilterLabel}>{strings.BookmarksLabel}</span>
+          <select
+            value=""
+            onChange={e => { if (e.target.value) handleApplyBookmark(e.target.value); }}
+            aria-label={strings.BookmarksLabel}
+          >
+            <option value="">{strings.ApplyBookmarkPlaceholder}</option>
+            {bookmarkList.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
+          </select>
+        </div>
+      )}
+
+      {drillActive && state.drillPath.length > 0 && (
+        <div className={styles.drillBreadcrumb}>
+          <button className={styles.breadcrumbLink} onClick={() => handleDrillTo(0)}>
+            {strings.DrillAllLabel}
+          </button>
+          {state.drillPath.map((value, i) => (
+            <React.Fragment key={`${value}-${i}`}>
+              <span className={styles.breadcrumbSeparator} aria-hidden="true">›</span>
+              {i < state.drillPath.length - 1 ? (
+                <button className={styles.breadcrumbLink} onClick={() => handleDrillTo(i + 1)}>
+                  {value}
+                </button>
+              ) : (
+                <span className={styles.breadcrumbCurrent}>{value}</span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
       )}
 
       {isReadOnly && !hasData && autoLoadError && (
@@ -469,7 +694,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         ) : (
           <ChartRenderer
             data={processedData}
-            columnConfig={columnConfig}
+            columnConfig={effectiveColumnConfig}
             chartType={chartType}
             chartTitle={chartTitle}
             showLegend={showLegend}
@@ -499,7 +724,15 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             thresholdColor={props.thresholdColor || '#d13438'}
             trendline={props.trendline || 'none'}
             trendWindow={props.trendWindow || 3}
-            onItemSelected={props.onItemSelected}
+            forecastPeriods={props.forecastPeriods || 0}
+            referenceLineType={props.referenceLineType || 'none'}
+            referenceLineValue={props.referenceLineValue || ''}
+            referenceLineColor={props.referenceLineColor || '#666666'}
+            histogramBins={props.histogramBins || 10}
+            colorByColumn={state.colorByColumn}
+            tooltipColumns={state.tooltipColumns}
+            aggregation={effectiveAggregation}
+            onItemSelected={handleItemSelected}
           />
         )}
       </div>
@@ -517,8 +750,21 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         </div>
       )}
 
-      {showDataTable && hasData && (
-        <DataTable data={processedData} columns={columns} />
+      {state.detailCategory ? (
+        <div>
+          <div className={styles.detailChip}>
+            <span>{fmt(strings.DetailsChipLabel, state.detailCategory, detailRows.length)}</span>
+            <button
+              className={styles.secondaryButton}
+              onClick={() => setState(prev => ({ ...prev, detailCategory: '' }))}
+            >
+              {strings.ClearButton}
+            </button>
+          </div>
+          <DataTable data={detailRows} columns={columns} />
+        </div>
+      ) : (
+        showDataTable && hasData && <DataTable data={processedData} columns={columns} />
       )}
     </div>
   );

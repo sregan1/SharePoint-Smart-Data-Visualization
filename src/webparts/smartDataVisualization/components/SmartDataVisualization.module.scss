@@ -483,3 +483,120 @@
   color: #107c10;
   font-weight: 600;
 }
+
+.kpiTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+}
+
+.kpiTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.kpiValue {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpiSubLabel {
+  font-size: 12px;
+  color: #605e5c;
+}
+
+.viewerFilterBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+
+  select,
+  input {
+    padding: 4px 8px;
+    border: 1px solid #c8c6c4;
+    border-radius: 2px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  input:disabled {
+    opacity: 0.5;
+  }
+}
+
+.viewerFilterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #323130;
+}
+
+.drillBreadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.breadcrumbLink {
+  background: none;
+  border: none;
+  color: #0078d4;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.breadcrumbSeparator {
+  color: #8a8886;
+}
+
+.breadcrumbCurrent {
+  font-weight: 600;
+  color: #323130;
+  padding: 2px 4px;
+}
+
+.detailChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 10px;
+  background: #eff6fc;
+  border: 1px solid #c7e0f4;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.bookmarkList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #edebe9;
+    font-size: 12px;
+  }
+}
+
+.bookmarkName {
+  flex: 1;
+  font-weight: 600;
+}
