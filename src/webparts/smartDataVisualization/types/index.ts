@@ -15,7 +15,14 @@ export type DataSourceType =
   | 'upload'
   | 'sharePointList'
   | 'sharePointFile'
-  | 'restApi';
+  | 'restApi'
+  | 'graphApi';
+
+export type AggregationType = 'none' | 'sum' | 'avg' | 'count' | 'min' | 'max';
+
+export type XAxisType = 'auto' | 'category' | 'time';
+
+export type TrendlineType = 'none' | 'linear' | 'movingAverage';
 
 export interface IDataSourceConfig {
   dataSourceType: DataSourceType;
@@ -25,6 +32,7 @@ export interface IDataSourceConfig {
   dataUrl: string;
   dataPath: string;
   delimiter: string;
+  sheetName: string;
 }
 
 export interface IColumnConfig {
@@ -109,6 +117,7 @@ export const DATA_SOURCE_LABELS: Record<DataSourceType, string> = {
   sharePointList: strings.SourceSharePointListLabel,
   sharePointFile: strings.SourceSharePointFileLabel,
   restApi: strings.SourceRestApiLabel,
+  graphApi: strings.SourceGraphApiLabel,
 };
 
 export const DATA_SOURCE_ICONS: Record<DataSourceType, string> = {
@@ -116,6 +125,7 @@ export const DATA_SOURCE_ICONS: Record<DataSourceType, string> = {
   sharePointList: '📋',
   sharePointFile: '🔗',
   restApi: '🌐',
+  graphApi: '🪐',
 };
 
 export const isPieOrDoughnut = (chartType: ChartType): boolean =>

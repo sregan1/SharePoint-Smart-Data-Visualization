@@ -6,6 +6,7 @@ import {
   CategoryScale,
   LinearScale,
   LogarithmicScale,
+  TimeScale,
   BarElement,
   LineElement,
   PointElement,
@@ -18,6 +19,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import { Bar, Line, Scatter, Pie, Doughnut, Bubble, Radar } from 'react-chartjs-2';
 import * as strings from 'SmartDataVisualizationWebPartStrings';
 import {
@@ -28,6 +30,7 @@ import {
   resolveColors,
   fmt,
 } from '../types';
+import { IChartSelection } from './ISmartDataVisualizationProps';
 import ExportBar from './ExportBar';
 import styles from './SmartDataVisualization.module.scss';
 
@@ -38,6 +41,7 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   LogarithmicScale,
+  TimeScale,
   BarElement,
   LineElement,
   PointElement,
@@ -77,6 +81,14 @@ interface IChartRendererProps {
   showGridLines: boolean;
   xLabelRotation: number;
   isDarkTheme: boolean;
+  xAxisType: string;
+  seriesTypes: string;
+  thresholdValue: string;
+  thresholdDirection: string;
+  thresholdColor: string;
+  trendline: string;
+  trendWindow: number;
+  onItemSelected?: (selection: IChartSelection) => void;
 }
 
 const formatValue = (
@@ -118,6 +130,36 @@ const parseNumOrUndefined = (s: string): number | undefined => {
 const sanitizeCsvValue = (v: unknown): unknown =>
   typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
 
+const toTimestamp = (v: unknown): number | null => {
+  const t = Date.parse(String(v ?? ''));
+  return isNaN(t) ? null : t;
+};
+
+// Least-squares line over the series index, skipping gaps
+const linearTrend = (values: (number | null)[]): (number | null)[] => {
+  const pts: Array<[number, number]> = [];
+  values.forEach((v, i) => { if (v !== null) pts.push([i, v]); });
+  if (pts.length < 2) return values.map(() => null);
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (const [x, y] of pts) { sx += x; sy += y; sxy += x * y; sxx += x * x; }
+  const n = pts.length;
+  const denom = n * sxx - sx * sx;
+  if (!denom) return values.map(() => null);
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return values.map((_, i) => m * i + b);
+};
+
+// Trailing moving average over a window, skipping gaps
+const movingAverage = (values: (number | null)[], window: number): (number | null)[] => {
+  const w = Math.max(2, window);
+  return values.map((_, i) => {
+    const slice = values.slice(Math.max(0, i - w + 1), i + 1)
+      .filter((v): v is number => v !== null);
+    return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
+  });
+};
+
 const downloadUrl = (url: string, filename: string) => {
   const a = document.createElement('a');
   a.href = url;
@@ -153,6 +195,14 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     showGridLines,
     xLabelRotation,
     isDarkTheme,
+    xAxisType,
+    seriesTypes,
+    thresholdValue,
+    thresholdDirection,
+    thresholdColor,
+    trendline,
+    trendWindow,
+    onItemSelected,
   } = props;
 
   // SharePoint section backgrounds in dark mode need light chart text/grid lines
@@ -231,6 +281,38 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   const axisMin = parseNumOrUndefined(yAxisMin);
   const axisMax = parseNumOrUndefined(yAxisMax);
 
+  // Time-scale X axis applies to vertical cartesian charts only
+  const canUseTimeAxis = chartType === 'bar' || chartType === 'line' || chartType === 'area';
+  const xIsTime = canUseTimeAxis && (() => {
+    if (xAxisType === 'category') return false;
+    if (xAxisType === 'time') return true;
+    // auto: majority of sampled X values are date-like strings (not plain numbers)
+    const sample = data.slice(0, 20)
+      .map(r => r[xColumn])
+      .filter(v => v !== null && v !== undefined && v !== '');
+    if (!sample.length) return false;
+    const dateLike = sample.filter(v =>
+      typeof v === 'string' && isNaN(Number(v)) && !isNaN(Date.parse(v))
+    );
+    return dateLike.length / sample.length >= 0.7;
+  })();
+
+  // Notify Dynamic Data consumers when the user clicks a chart element
+  const handleChartClick = (_evt: unknown, elements: Array<{ datasetIndex: number; index: number }>): void => {
+    if (!elements?.length || !onItemSelected) return;
+    const { datasetIndex, index } = elements[0];
+    if (datasetIndex >= validYColumns.length) return; // trendline datasets are not selectable
+    const series = validYColumns[datasetIndex] || validYColumns[0] || '';
+    const row = data[index];
+    if (!row) return;
+    const categoryCol = isPieOrDoughnut(chartType) ? (labelColumn || xColumn) : xColumn;
+    onItemSelected({
+      category: String(row[categoryCol] ?? ''),
+      value: numOrNull(row[series]),
+      series,
+    });
+  };
+
   const yAxisConfig: any = {
     stacked,
     type: logScale ? 'logarithmic' : 'linear',
@@ -243,6 +325,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
 
   const xAxisConfig: any = {
     stacked,
+    type: xIsTime ? 'time' : undefined,
     grid: { display: showGridLines, color: gridColor },
     title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
     ticks: {
@@ -255,6 +338,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   const baseOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
+    onClick: handleChartClick,
     plugins: {
       legend: { display: showLegend, position: legendPos, labels: { color: textColor } },
       title: { display: !!chartTitle, text: chartTitle, font: { size: 16 }, color: textColor },
@@ -291,22 +375,73 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   };
 
   const buildBarLineData = (ct: ChartType) => {
-    const labels = data.map(row => String(row[xColumn] ?? ''));
-    const datasets = validYColumns.map((col, i) => {
+    const typeOverrides = seriesTypes ? seriesTypes.split(',').map(s => s.trim()) : [];
+    const allowCombo = ct === 'bar' || ct === 'line' || ct === 'area';
+    const threshold = parseNumOrUndefined(thresholdValue);
+    const overThreshold = (v: number | null): boolean =>
+      v !== null && threshold !== undefined &&
+      (thresholdDirection === 'above' ? v > threshold : v < threshold);
+
+    const toPoints = (values: (number | null)[]) =>
+      data
+        .map((row, i) => ({ x: toTimestamp(row[xColumn]), y: values[i] }))
+        .filter((p): p is { x: number; y: number | null } => p.x !== null);
+
+    const datasets: any[] = validYColumns.map((col, i) => {
       const color = colors[i];
-      const isBar = ct === 'bar' || ct === 'horizontalBar';
+      const override = allowCombo && (typeOverrides[i] === 'bar' || typeOverrides[i] === 'line')
+        ? typeOverrides[i]
+        : undefined;
+      const renderedAsBar = override ? override === 'bar' : (ct === 'bar' || ct === 'horizontalBar');
+      const values = data.map(row => numOrNull(row[col]));
+
+      let backgroundColor: string | string[] = renderedAsBar ? `${color}cc` : `${color}40`;
+      let pointBackgroundColor: string | string[] | undefined;
+      if (threshold !== undefined) {
+        if (renderedAsBar) {
+          backgroundColor = values.map(v => overThreshold(v) ? `${thresholdColor}cc` : `${color}cc`);
+        } else {
+          pointBackgroundColor = values.map(v => overThreshold(v) ? thresholdColor : color);
+        }
+      }
+
       return {
         label: col,
-        data: data.map(row => numOrNull(row[col])),
-        backgroundColor: isBar ? `${color}cc` : `${color}40`,
+        type: override,
+        data: xIsTime ? toPoints(values) : values,
+        backgroundColor,
+        pointBackgroundColor,
         borderColor: color,
         borderWidth: 2,
-        fill: ct === 'area',
+        fill: override ? false : ct === 'area',
         tension: 0.3,
-        pointRadius: ct === 'line' || ct === 'area' ? 3 : undefined,
+        pointRadius: renderedAsBar ? undefined : 3,
       };
     });
-    return { labels, datasets };
+
+    if (trendline === 'linear' || trendline === 'movingAverage') {
+      validYColumns.forEach((col, i) => {
+        const values = data.map(row => numOrNull(row[col]));
+        const trendValues = trendline === 'linear'
+          ? linearTrend(values)
+          : movingAverage(values, trendWindow || 3);
+        datasets.push({
+          label: `${col}${strings.TrendSuffix}`,
+          type: 'line',
+          data: xIsTime ? toPoints(trendValues) : trendValues,
+          borderColor: colors[i],
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          datalabels: { display: false },
+        });
+      });
+    }
+
+    if (xIsTime) return { datasets };
+    return { labels: data.map(row => String(row[xColumn] ?? '')), datasets };
   };
 
   const buildScatterData = () => ({

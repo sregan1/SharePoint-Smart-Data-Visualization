@@ -14,12 +14,14 @@ import {
   extractColumns,
   fmt,
 } from '../types';
+import * as XLSX from 'xlsx';
 import {
   parseCsvText,
-  parseExcelBuffer,
+  sheetToRows,
   loadSharePointList,
   loadSharePointFile,
   loadRestApi,
+  loadGraphApi,
   SP_LIST_ROW_LIMIT,
 } from '../services/dataLoaders';
 import styles from './SmartDataVisualization.module.scss';
@@ -63,10 +65,13 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   const [isDiscovering, setIsDiscovering] = React.useState(false);
   const [discoverError, setDiscoverError] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  // Kept so the user can switch sheets without re-uploading the file
+  const workbookRef = React.useRef<XLSX.WorkBook | null>(null);
+  const [sheetNames, setSheetNames] = React.useState<string[]>([]);
   // Unique id prefix so label/input pairing stays valid with multiple instances on a page
   const idPrefix = React.useRef(`sdv-${Math.random().toString(36).slice(2, 8)}`).current;
 
-  const sourceTypes: DataSourceType[] = ['upload', 'sharePointList', 'sharePointFile', 'restApi'];
+  const sourceTypes: DataSourceType[] = ['upload', 'sharePointList', 'sharePointFile', 'restApi', 'graphApi'];
 
   React.useEffect(() => {
     if (config.dataSourceType !== 'sharePointList') return;
@@ -132,8 +137,13 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       if (name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt')) {
         const text = await file.text();
         data = parseCsvText(text, config.delimiter || undefined);
+        workbookRef.current = null;
+        setSheetNames([]);
       } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-        data = parseExcelBuffer(await file.arrayBuffer());
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        workbookRef.current = workbook;
+        setSheetNames(workbook.SheetNames.length > 1 ? workbook.SheetNames.slice() : []);
+        data = sheetToRows(workbook, config.sheetName || undefined);
       } else {
         throw new Error(strings.ErrorUnsupportedFileType);
       }
@@ -162,12 +172,14 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     }
   };
 
-  const handleSharePointFile = async () => {
+  const handleSharePointFile = async (sheetOverride?: string) => {
     if (!config.dataUrl) { setError(strings.ErrorEnterFileUrl); return; }
     setLoading(true);
     setError('');
     try {
-      const result = await loadSharePointFile(config.dataUrl, config.delimiter || undefined);
+      const sheet = sheetOverride !== undefined ? sheetOverride : (config.sheetName || undefined);
+      const result = await loadSharePointFile(config.dataUrl, config.delimiter || undefined, sheet);
+      setSheetNames(result.sheetNames && result.sheetNames.length > 1 ? result.sheetNames : []);
       handleDataLoaded(result.rows);
     } catch (err) {
       setError(fmt(strings.ErrorLoadFile, err instanceof Error ? err.message : String(err)));
@@ -190,12 +202,37 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     }
   };
 
+  const handleGraphApi = async () => {
+    if (!config.dataUrl) { setError(strings.ErrorEnterUrl); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const result = await loadGraphApi(context, config.dataUrl, config.dataPath || undefined);
+      handleDataLoaded(result.rows);
+    } catch (err) {
+      setError(fmt(strings.ErrorFetchData, err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLoad = () => {
     switch (config.dataSourceType) {
       case 'upload': fileInputRef.current?.click(); break;
       case 'sharePointList': handleSharePointList(); break;
       case 'sharePointFile': handleSharePointFile(); break;
       case 'restApi': handleRestApi(); break;
+      case 'graphApi': handleGraphApi(); break;
+    }
+  };
+
+  const handleSheetChange = (name: string) => {
+    onConfigChange({ sheetName: name });
+    if (config.dataSourceType === 'upload' && workbookRef.current) {
+      const rows = sheetToRows(workbookRef.current, name);
+      handleDataLoaded(rows, uploadedFileName || config.uploadedFileName);
+    } else if (config.dataSourceType === 'sharePointFile') {
+      handleSharePointFile(name);
     }
   };
 
@@ -203,6 +240,8 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     onClearData();
     setSuccess('');
     setWarning('');
+    workbookRef.current = null;
+    setSheetNames([]);
     // Small delay so state clears before the picker opens
     setTimeout(() => fileInputRef.current?.click(), 50);
   };
@@ -253,7 +292,11 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
                 <button className={styles.secondaryButton} onClick={handleChangeFile} disabled={loading}>
                   {strings.ChangeFileButton}
                 </button>
-                <button className={styles.secondaryButton} onClick={() => { onClearData(); setSuccess(''); setWarning(''); }} disabled={loading}>
+                <button
+                  className={styles.secondaryButton}
+                  onClick={() => { onClearData(); setSuccess(''); setWarning(''); workbookRef.current = null; setSheetNames([]); }}
+                  disabled={loading}
+                >
                   {strings.ClearButton}
                 </button>
               </div>
@@ -278,6 +321,21 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
               ))}
             </select>
           </div>
+          {sheetNames.length > 1 && (
+            <div className={styles.fieldGroup}>
+              <label htmlFor={`${idPrefix}-sheet`}>{strings.SheetNameLabel}</label>
+              <select
+                id={`${idPrefix}-sheet`}
+                value={config.sheetName && sheetNames.indexOf(config.sheetName) >= 0 ? config.sheetName : sheetNames[0]}
+                onChange={e => handleSheetChange(e.target.value)}
+                disabled={loading}
+              >
+                {sheetNames.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
@@ -340,18 +398,23 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
         </div>
       )}
 
-      {config.dataSourceType === 'restApi' && (
+      {(config.dataSourceType === 'restApi' || config.dataSourceType === 'graphApi') && (
         <div>
           <div className={styles.fieldRow}>
             <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-              <label htmlFor={`${idPrefix}-apiurl`}>{strings.ApiUrlLabel}</label>
+              <label htmlFor={`${idPrefix}-apiurl`}>
+                {config.dataSourceType === 'graphApi' ? strings.GraphPathLabel : strings.ApiUrlLabel}
+              </label>
               <input
                 id={`${idPrefix}-apiurl`}
-                type="url"
+                type={config.dataSourceType === 'graphApi' ? 'text' : 'url'}
                 value={config.dataUrl}
                 onChange={e => onConfigChange({ dataUrl: e.target.value })}
-                placeholder="https://api.example.com/data"
+                placeholder={config.dataSourceType === 'graphApi' ? '/me/memberOf' : 'https://api.example.com/data'}
               />
+              {config.dataSourceType === 'graphApi' && (
+                <span className={styles.helpText}>{strings.GraphPathHelp}</span>
+              )}
             </div>
           </div>
           <div className={styles.fieldRow}>

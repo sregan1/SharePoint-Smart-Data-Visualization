@@ -8,8 +8,10 @@ interface IColumnMapperProps {
   config: IColumnConfig;
   chartType: ChartType;
   seriesColors: string;
+  seriesTypes: string;
   onChange: (config: Partial<IColumnConfig>) => void;
   onSeriesColorsChange: (colors: string) => void;
+  onSeriesTypesChange: (types: string) => void;
 }
 
 const ColumnMapper: React.FC<IColumnMapperProps> = ({
@@ -17,8 +19,10 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
   config,
   chartType,
   seriesColors,
+  seriesTypes,
   onChange,
   onSeriesColorsChange,
+  onSeriesTypesChange,
 }) => {
   const isRadar = chartType === 'radar';
   const isPie = isPieOrDoughnut(chartType);
@@ -28,6 +32,9 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
   const idPrefix = React.useRef(`sdv-cm-${Math.random().toString(36).slice(2, 8)}`).current;
 
   const colorOverrides = seriesColors ? seriesColors.split(',') : [];
+  const typeOverrides = seriesTypes ? seriesTypes.split(',') : [];
+  // Per-series type only makes sense for cartesian multi-series charts
+  const supportsComboTypes = chartType === 'bar' || chartType === 'line' || chartType === 'area';
 
   const getSeriesColor = (yColIndex: number): string => {
     const c = colorOverrides[yColIndex] ? colorOverrides[yColIndex].trim() : '';
@@ -39,6 +46,16 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
     while (current.length <= yColIndex) current.push('');
     current[yColIndex] = hex;
     onSeriesColorsChange(current.join(','));
+  };
+
+  const getSeriesType = (yColIndex: number): string =>
+    typeOverrides[yColIndex] ? typeOverrides[yColIndex].trim() : '';
+
+  const setSeriesType = (yColIndex: number, type: string) => {
+    const current = [...typeOverrides];
+    while (current.length <= yColIndex) current.push('');
+    current[yColIndex] = type;
+    onSeriesTypesChange(current.join(','));
   };
 
   const toggleYColumn = (col: string) => {
@@ -125,14 +142,28 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
                       {col}
                     </label>
                     {checked && yIdx >= 0 && (
-                      <input
-                        type="color"
-                        className={styles.colorSwatch}
-                        value={getSeriesColor(yIdx)}
-                        onChange={e => setSeriesColor(yIdx, e.target.value)}
-                        title={fmt(strings.SeriesColorTitle, col)}
-                        aria-label={fmt(strings.SeriesColorTitle, col)}
-                      />
+                      <>
+                        <input
+                          type="color"
+                          className={styles.colorSwatch}
+                          value={getSeriesColor(yIdx)}
+                          onChange={e => setSeriesColor(yIdx, e.target.value)}
+                          title={fmt(strings.SeriesColorTitle, col)}
+                          aria-label={fmt(strings.SeriesColorTitle, col)}
+                        />
+                        {supportsComboTypes && (
+                          <select
+                            value={getSeriesType(yIdx)}
+                            onChange={e => setSeriesType(yIdx, e.target.value)}
+                            title={fmt(strings.SeriesTypeTitle, col)}
+                            aria-label={fmt(strings.SeriesTypeTitle, col)}
+                          >
+                            <option value="">{strings.SeriesTypeDefault}</option>
+                            <option value="bar">{strings.SeriesTypeBar}</option>
+                            <option value="line">{strings.SeriesTypeLine}</option>
+                          </select>
+                        )}
+                      </>
                     )}
                   </li>
                 );

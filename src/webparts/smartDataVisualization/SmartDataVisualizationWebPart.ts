@@ -10,15 +10,49 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
+import { IDynamicDataCallables, IDynamicDataPropertyDefinition } from '@microsoft/sp-dynamic-data';
 
 import SmartDataVisualization from './components/SmartDataVisualization';
-import { ISmartDataVisualizationProps, ISmartDataVisualizationWebPartProps } from './components/ISmartDataVisualizationProps';
+import {
+  ISmartDataVisualizationProps,
+  ISmartDataVisualizationWebPartProps,
+  IChartSelection,
+} from './components/ISmartDataVisualizationProps';
 import * as strings from 'SmartDataVisualizationWebPartStrings';
 import { ChartType } from './types';
 
-export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart<ISmartDataVisualizationWebPartProps> {
+export default class SmartDataVisualizationWebPart
+  extends BaseClientSideWebPart<ISmartDataVisualizationWebPartProps>
+  implements IDynamicDataCallables {
 
   private _isDarkTheme: boolean = false;
+  private _selection: IChartSelection = { category: '', value: null, series: '' };
+
+  // ---- Dynamic Data source: lets other web parts react to chart clicks ----
+
+  public getPropertyDefinitions(): ReadonlyArray<IDynamicDataPropertyDefinition> {
+    return [
+      { id: 'selectedCategory', title: strings.DynamicDataCategoryLabel },
+      { id: 'selectedValue', title: strings.DynamicDataValueLabel },
+      { id: 'selectedSeries', title: strings.DynamicDataSeriesLabel },
+    ];
+  }
+
+  public getPropertyValue(propertyId: string): string | number | null {
+    switch (propertyId) {
+      case 'selectedCategory': return this._selection.category;
+      case 'selectedValue': return this._selection.value;
+      case 'selectedSeries': return this._selection.series;
+    }
+    throw new Error(`Unknown dynamic data property: ${propertyId}`);
+  }
+
+  private _handleItemSelected = (selection: IChartSelection): void => {
+    this._selection = selection;
+    this.context.dynamicDataSourceManager.notifyPropertyChanged('selectedCategory');
+    this.context.dynamicDataSourceManager.notifyPropertyChanged('selectedValue');
+    this.context.dynamicDataSourceManager.notifyPropertyChanged('selectedSeries');
+  };
 
   public render(): void {
     const p = this.properties;
@@ -75,6 +109,24 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
         rowLimit: p.rowLimit || 0,
         filterColumn: p.filterColumn || '',
         filterValue: p.filterValue || '',
+        // Aggregation
+        groupByColumn: p.groupByColumn || '',
+        aggregation: p.aggregation || 'none',
+        // Data & refresh
+        refreshIntervalMinutes: p.refreshIntervalMinutes || 0,
+        cacheMinutes: p.cacheMinutes || 0,
+        sheetName: p.sheetName || '',
+        // Axes
+        xAxisType: p.xAxisType || 'auto',
+        // Combo charts
+        seriesTypes: p.seriesTypes || '',
+        // Conditional formatting
+        thresholdValue: p.thresholdValue || '',
+        thresholdDirection: p.thresholdDirection || 'below',
+        thresholdColor: p.thresholdColor || '#d13438',
+        // Analytics
+        trendline: p.trendline || 'none',
+        trendWindow: p.trendWindow || 3,
         // Framework
         context: this.context,
         isDarkTheme: this._isDarkTheme,
@@ -82,6 +134,7 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
         onPropertiesUpdate: (props: Partial<ISmartDataVisualizationWebPartProps>) => {
           Object.assign(this.properties, props);
         },
+        onItemSelected: this._handleItemSelected,
       }
     );
 
@@ -89,6 +142,7 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
   }
 
   protected onInit(): Promise<void> {
+    this.context.dynamicDataSourceManager.initializeSource(this);
     return super.onInit();
   }
 
@@ -279,6 +333,78 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
                   max: 90,
                   step: 15,
                   value: this.properties.xLabelRotation !== undefined ? this.properties.xLabelRotation : 0,
+                }),
+                PropertyPaneDropdown('xAxisType', {
+                  label: strings.XAxisTypeFieldLabel,
+                  options: [
+                    { key: 'auto', text: strings.XAxisTypeAuto },
+                    { key: 'category', text: strings.XAxisTypeCategory },
+                    { key: 'time', text: strings.XAxisTypeTime },
+                  ],
+                  selectedKey: this.properties.xAxisType || 'auto',
+                }),
+              ],
+            },
+            {
+              groupName: strings.AnalyticsGroupName,
+              groupFields: [
+                PropertyPaneDropdown('trendline', {
+                  label: strings.TrendlineFieldLabel,
+                  options: [
+                    { key: 'none', text: strings.TrendlineNone },
+                    { key: 'linear', text: strings.TrendlineLinear },
+                    { key: 'movingAverage', text: strings.TrendlineMovingAverage },
+                  ],
+                  selectedKey: this.properties.trendline || 'none',
+                }),
+                PropertyPaneSlider('trendWindow', {
+                  label: strings.TrendWindowFieldLabel,
+                  min: 2,
+                  max: 20,
+                  step: 1,
+                  value: this.properties.trendWindow || 3,
+                  disabled: this.properties.trendline !== 'movingAverage',
+                }),
+              ],
+            },
+            {
+              groupName: strings.ConditionalGroupName,
+              groupFields: [
+                PropertyPaneTextField('thresholdValue', {
+                  label: strings.ThresholdValueFieldLabel,
+                  placeholder: strings.ThresholdValuePlaceholder,
+                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
+                }),
+                PropertyPaneDropdown('thresholdDirection', {
+                  label: strings.ThresholdDirectionFieldLabel,
+                  options: [
+                    { key: 'below', text: strings.ThresholdBelow },
+                    { key: 'above', text: strings.ThresholdAbove },
+                  ],
+                  selectedKey: this.properties.thresholdDirection || 'below',
+                }),
+                PropertyPaneTextField('thresholdColor', {
+                  label: strings.ThresholdColorFieldLabel,
+                  placeholder: '#d13438',
+                }),
+              ],
+            },
+            {
+              groupName: strings.DataRefreshGroupName,
+              groupFields: [
+                PropertyPaneSlider('refreshIntervalMinutes', {
+                  label: strings.RefreshIntervalFieldLabel,
+                  min: 0,
+                  max: 60,
+                  step: 5,
+                  value: this.properties.refreshIntervalMinutes || 0,
+                }),
+                PropertyPaneSlider('cacheMinutes', {
+                  label: strings.CacheMinutesFieldLabel,
+                  min: 0,
+                  max: 60,
+                  step: 5,
+                  value: this.properties.cacheMinutes || 0,
                 }),
               ],
             },

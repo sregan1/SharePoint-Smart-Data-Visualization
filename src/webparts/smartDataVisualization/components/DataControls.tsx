@@ -9,14 +9,27 @@ interface IDataControlsProps {
   rowLimit: number;
   filterColumn: string;
   filterValue: string;
+  groupByColumn: string;
+  aggregation: string;
   onChange: (partial: {
     sortColumn?: string;
     sortDirection?: string;
     rowLimit?: number;
     filterColumn?: string;
     filterValue?: string;
+    groupByColumn?: string;
+    aggregation?: string;
   }) => void;
 }
+
+const AGGREGATION_OPTIONS = [
+  { value: 'none', label: strings.AggNone },
+  { value: 'sum', label: strings.AggSum },
+  { value: 'avg', label: strings.AggAvg },
+  { value: 'count', label: strings.AggCount },
+  { value: 'min', label: strings.AggMin },
+  { value: 'max', label: strings.AggMax },
+];
 
 const DataControls: React.FC<IDataControlsProps> = ({
   columns,
@@ -25,6 +38,8 @@ const DataControls: React.FC<IDataControlsProps> = ({
   rowLimit,
   filterColumn,
   filterValue,
+  groupByColumn,
+  aggregation,
   onChange,
 }) => {
   // Unique id prefix so label/input pairing stays valid with multiple instances on a page
@@ -66,6 +81,33 @@ const DataControls: React.FC<IDataControlsProps> = ({
             value={rowLimit}
             onChange={e => onChange({ rowLimit: Math.max(0, parseInt(e.target.value, 10) || 0) })}
           />
+        </div>
+      </div>
+      <div className={styles.fieldRow}>
+        <div className={styles.fieldGroup}>
+          <label htmlFor={`${idPrefix}-groupby`}>{strings.GroupByLabel}</label>
+          <select
+            id={`${idPrefix}-groupby`}
+            value={groupByColumn}
+            onChange={e => onChange({ groupByColumn: e.target.value })}
+          >
+            <option value="">{strings.NoneOption}</option>
+            {columns.map(col => <option key={col} value={col}>{col}</option>)}
+          </select>
+        </div>
+        <div className={styles.fieldGroup}>
+          <label htmlFor={`${idPrefix}-agg`}>{strings.AggregationLabel}</label>
+          <select
+            id={`${idPrefix}-agg`}
+            value={aggregation}
+            onChange={e => onChange({ aggregation: e.target.value })}
+            disabled={!groupByColumn}
+          >
+            {AGGREGATION_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <span className={styles.helpText}>{strings.GroupByHelp}</span>
         </div>
       </div>
       <div className={styles.fieldRow}>

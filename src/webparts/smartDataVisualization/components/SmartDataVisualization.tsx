@@ -2,7 +2,15 @@ import * as React from 'react';
 import * as strings from 'SmartDataVisualizationWebPartStrings';
 import { ISmartDataVisualizationProps } from './ISmartDataVisualizationProps';
 import { IChartRecord, IColumnConfig, IDataSourceConfig, extractColumns, fmt } from '../types';
-import { loadSharePointList, loadSharePointFile, loadRestApi } from '../services/dataLoaders';
+import {
+  loadSharePointList,
+  loadSharePointFile,
+  loadRestApi,
+  loadGraphApi,
+  getCachedRows,
+  setCachedRows,
+  clearCachedRows,
+} from '../services/dataLoaders';
 import DataSourcePanel from './DataSourcePanel';
 import ColumnMapper from './ColumnMapper';
 import DataControls from './DataControls';
@@ -23,10 +31,53 @@ interface ISmartDataVisualizationState {
   rowLimit: number;
   filterColumn: string;
   filterValue: string;
+  groupByColumn: string;
+  aggregation: string;
   seriesColors: string;
+  seriesTypes: string;
   // Persisted upload state
   uploadedFileName: string;
 }
+
+// Group rows by a column, aggregating every numeric column. 'count' yields a
+// single "Count" column instead.
+const aggregateRows = (rows: IChartRecord[], groupBy: string, agg: string): IChartRecord[] => {
+  if (!groupBy || !agg || agg === 'none' || !rows.length) return rows;
+  const keys: string[] = [];
+  const groups: Record<string, IChartRecord[]> = {};
+  for (const row of rows) {
+    const key = String(row[groupBy] ?? '');
+    if (!groups[key]) { groups[key] = []; keys.push(key); }
+    groups[key].push(row);
+  }
+  return keys.map(key => {
+    const members = groups[key];
+    const out: IChartRecord = { [groupBy]: key };
+    if (agg === 'count') {
+      out.Count = members.length;
+      return out;
+    }
+    const seen = new Set<string>();
+    for (const member of members) {
+      for (const col of Object.keys(member)) {
+        if (col === groupBy || seen.has(col)) continue;
+        seen.add(col);
+        const values: number[] = [];
+        for (const m of members) {
+          const v = m[col];
+          const n = v === null || v === undefined || v === '' ? NaN : Number(v);
+          if (!isNaN(n)) values.push(n);
+        }
+        if (!values.length) continue;
+        if (agg === 'sum') out[col] = values.reduce((a, b) => a + b, 0);
+        else if (agg === 'avg') out[col] = values.reduce((a, b) => a + b, 0) / values.length;
+        else if (agg === 'min') out[col] = Math.min(...values);
+        else if (agg === 'max') out[col] = Math.max(...values);
+      }
+    }
+    return out;
+  });
+};
 
 const buildColumnConfig = (
   columns: string[],
@@ -109,7 +160,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       rowLimit: props.rowLimit || 0,
       filterColumn: props.filterColumn || '',
       filterValue: props.filterValue || '',
+      groupByColumn: props.groupByColumn || '',
+      aggregation: props.aggregation || 'none',
       seriesColors: props.seriesColors || '',
+      seriesTypes: props.seriesTypes || '',
       uploadedFileName: props.uploadedFileName || '',
       dataSourceConfig: {
         dataSourceType: srcType,
@@ -119,6 +173,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         dataUrl: props.dataUrl || '',
         dataPath: props.dataPath || '',
         delimiter: props.delimiter || '',
+        sheetName: props.sheetName || '',
       },
       columnConfig,
     };
@@ -144,17 +199,28 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       try {
         let rows: IChartRecord[] = [];
 
+        const cacheKey = `${srcType}|${props.dataUrl}|${props.dataPath || ''}`;
+        const cacheMinutes = props.cacheMinutes || 0;
+
         if (srcType === 'sharePointList') {
           if (!props.listName) { setState(prev => ({ ...prev, isLoading: false })); return; }
           rows = (await loadSharePointList(context, props.siteUrl, props.listName)).rows;
 
         } else if (srcType === 'sharePointFile') {
           if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          rows = (await loadSharePointFile(props.dataUrl, props.delimiter || undefined)).rows;
+          rows = (await loadSharePointFile(props.dataUrl, props.delimiter || undefined, props.sheetName || undefined)).rows;
 
-        } else if (srcType === 'restApi') {
+        } else if (srcType === 'restApi' || srcType === 'graphApi') {
           if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          rows = (await loadRestApi(props.dataUrl, props.dataPath || undefined)).rows;
+          const cached = getCachedRows(cacheKey, cacheMinutes);
+          if (cached) {
+            rows = cached;
+          } else {
+            rows = srcType === 'restApi'
+              ? (await loadRestApi(props.dataUrl, props.dataPath || undefined)).rows
+              : (await loadGraphApi(context, props.dataUrl, props.dataPath || undefined)).rows;
+            if (cacheMinutes > 0) setCachedRows(cacheKey, rows);
+          }
         }
 
         if (cancelled) return;
@@ -177,6 +243,15 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
+
+  // Auto-refresh for network sources (view-mode dashboards)
+  React.useEffect(() => {
+    const srcType = props.dataSourceType || 'upload';
+    const minutes = props.refreshIntervalMinutes || 0;
+    if (srcType === 'upload' || minutes <= 0) return;
+    const id = setInterval(() => setRefreshKey(k => k + 1), minutes * 60_000);
+    return () => clearInterval(id);
+  }, [props.refreshIntervalMinutes, props.dataSourceType]);
 
   const handleDataLoaded = (data: IChartRecord[], columns: string[]) => {
     const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
@@ -237,6 +312,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     if (partial.dataUrl !== undefined) mapped.dataUrl = partial.dataUrl;
     if (partial.dataPath !== undefined) mapped.dataPath = partial.dataPath;
     if (partial.delimiter !== undefined) mapped.delimiter = partial.delimiter;
+    if (partial.sheetName !== undefined) mapped.sheetName = partial.sheetName;
     if (Object.keys(mapped).length) onPropertiesUpdate(mapped);
   };
 
@@ -257,9 +333,15 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     onPropertiesUpdate({ seriesColors: colors });
   };
 
+  const handleSeriesTypesChange = (types: string) => {
+    setState(prev => ({ ...prev, seriesTypes: types }));
+    onPropertiesUpdate({ seriesTypes: types });
+  };
+
   const handleDataControlsChange = (partial: {
     sortColumn?: string; sortDirection?: string; rowLimit?: number;
     filterColumn?: string; filterValue?: string;
+    groupByColumn?: string; aggregation?: string;
   }) => {
     setState(prev => ({ ...prev, ...partial }));
     const mapped: Record<string, string | number> = {};
@@ -268,12 +350,16 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     if (partial.rowLimit !== undefined) mapped.rowLimit = partial.rowLimit;
     if (partial.filterColumn !== undefined) mapped.filterColumn = partial.filterColumn;
     if (partial.filterValue !== undefined) mapped.filterValue = partial.filterValue;
+    if (partial.groupByColumn !== undefined) mapped.groupByColumn = partial.groupByColumn;
+    if (partial.aggregation !== undefined) mapped.aggregation = partial.aggregation;
     if (Object.keys(mapped).length) onPropertiesUpdate(mapped as any);
   };
 
   const handleRefresh = () => {
     const srcType = props.dataSourceType || 'upload';
     if (srcType === 'upload') return;
+    // Explicit refresh should bypass the session cache
+    clearCachedRows(`${srcType}|${props.dataUrl}|${props.dataPath || ''}`);
     setRefreshKey(k => k + 1);
   };
 
@@ -285,6 +371,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         String(r[state.filterColumn] ?? '').toLowerCase().includes(lc)
       );
     }
+    result = aggregateRows(result, state.groupByColumn, state.aggregation);
     if (state.sortColumn) {
       result = [...result].sort((a, b) => {
         const av = a[state.sortColumn];
@@ -297,7 +384,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     }
     if (state.rowLimit > 0) result = result.slice(0, state.rowLimit);
     return result;
-  }, [state.data, state.filterColumn, state.filterValue, state.sortColumn, state.sortDirection, state.rowLimit]);
+  }, [state.data, state.filterColumn, state.filterValue, state.sortColumn, state.sortDirection,
+      state.rowLimit, state.groupByColumn, state.aggregation]);
 
   const { columns, dataSourceConfig, columnConfig, autoLoadError, isLoading, isConfigOpen, seriesColors } = state;
   const hasData = state.data.length > 0;
@@ -343,8 +431,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   config={columnConfig}
                   chartType={chartType}
                   seriesColors={seriesColors}
+                  seriesTypes={state.seriesTypes}
                   onChange={handleColumnConfigChange}
                   onSeriesColorsChange={handleSeriesColorsChange}
+                  onSeriesTypesChange={handleSeriesTypesChange}
                 />
               )}
               {hasData && columns.length > 0 && (
@@ -355,6 +445,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   rowLimit={state.rowLimit}
                   filterColumn={state.filterColumn}
                   filterValue={state.filterValue}
+                  groupByColumn={state.groupByColumn}
+                  aggregation={state.aggregation}
                   onChange={handleDataControlsChange}
                 />
               )}
@@ -400,6 +492,14 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             showGridLines={showGridLines !== false}
             xLabelRotation={xLabelRotation !== undefined ? xLabelRotation : 0}
             isDarkTheme={isDarkTheme}
+            xAxisType={props.xAxisType || 'auto'}
+            seriesTypes={state.seriesTypes}
+            thresholdValue={props.thresholdValue || ''}
+            thresholdDirection={props.thresholdDirection || 'below'}
+            thresholdColor={props.thresholdColor || '#d13438'}
+            trendline={props.trendline || 'none'}
+            trendWindow={props.trendWindow || 3}
+            onItemSelected={props.onItemSelected}
           />
         )}
       </div>

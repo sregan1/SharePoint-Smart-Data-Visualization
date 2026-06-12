@@ -62,6 +62,35 @@ declare interface ISmartDataVisualizationWebPartStrings {
   LogScaleFieldLabel: string;
   ShowGridLinesFieldLabel: string;
   XLabelRotationFieldLabel: string;
+  // Axes — X axis type
+  XAxisTypeFieldLabel: string;
+  XAxisTypeAuto: string;
+  XAxisTypeCategory: string;
+  XAxisTypeTime: string;
+  // Analytics
+  AnalyticsGroupName: string;
+  TrendlineFieldLabel: string;
+  TrendlineNone: string;
+  TrendlineLinear: string;
+  TrendlineMovingAverage: string;
+  TrendWindowFieldLabel: string;
+  TrendSuffix: string;
+  // Conditional formatting
+  ConditionalGroupName: string;
+  ThresholdValueFieldLabel: string;
+  ThresholdValuePlaceholder: string;
+  ThresholdDirectionFieldLabel: string;
+  ThresholdBelow: string;
+  ThresholdAbove: string;
+  ThresholdColorFieldLabel: string;
+  // Data & refresh
+  DataRefreshGroupName: string;
+  RefreshIntervalFieldLabel: string;
+  CacheMinutesFieldLabel: string;
+  // Dynamic data
+  DynamicDataCategoryLabel: string;
+  DynamicDataValueLabel: string;
+  DynamicDataSeriesLabel: string;
   // Legacy
   DataSourceGroupName: string;
   // Main component
@@ -84,6 +113,10 @@ declare interface ISmartDataVisualizationWebPartStrings {
   SourceSharePointListLabel: string;
   SourceSharePointFileLabel: string;
   SourceRestApiLabel: string;
+  SourceGraphApiLabel: string;
+  GraphPathLabel: string;
+  GraphPathHelp: string;
+  SheetNameLabel: string;
   DelimiterLabel: string;
   DelimiterAutoDetect: string;
   DelimiterComma: string;
@@ -136,6 +169,10 @@ declare interface ISmartDataVisualizationWebPartStrings {
   SizeColumnLabel: string;
   NoSizeColumnOption: string;
   SeriesColorTitle: string;
+  SeriesTypeTitle: string;
+  SeriesTypeDefault: string;
+  SeriesTypeBar: string;
+  SeriesTypeLine: string;
   // Data controls
   DataControlsSectionHeader: string;
   SortByColumnLabel: string;
@@ -147,6 +184,15 @@ declare interface ISmartDataVisualizationWebPartStrings {
   FilterColumnLabel: string;
   FilterContainsLabel: string;
   FilterValuePlaceholder: string;
+  GroupByLabel: string;
+  AggregationLabel: string;
+  GroupByHelp: string;
+  AggNone: string;
+  AggSum: string;
+  AggAvg: string;
+  AggCount: string;
+  AggMin: string;
+  AggMax: string;
   // Data table
   DataTableHeader: string;
   PrevPageButton: string;

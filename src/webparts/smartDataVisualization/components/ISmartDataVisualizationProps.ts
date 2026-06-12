@@ -1,6 +1,12 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { ChartType, DataSourceType } from '../types';
 
+export interface IChartSelection {
+  category: string;
+  value: number | null;
+  series: string;
+}
+
 export interface ISmartDataVisualizationWebPartProps {
   // Web part header (above the chart container)
   webPartHeader: string;
@@ -52,6 +58,24 @@ export interface ISmartDataVisualizationWebPartProps {
   rowLimit: number;
   filterColumn: string;
   filterValue: string;
+  // Aggregation (inline controls)
+  groupByColumn: string;
+  aggregation: string;
+  // Data & refresh
+  refreshIntervalMinutes: number;
+  cacheMinutes: number;
+  sheetName: string;
+  // Axes
+  xAxisType: string;
+  // Combo charts
+  seriesTypes: string;
+  // Conditional formatting
+  thresholdValue: string;
+  thresholdDirection: string;
+  thresholdColor: string;
+  // Analytics
+  trendline: string;
+  trendWindow: number;
 }
 
 export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWebPartProps {
@@ -59,4 +83,5 @@ export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWeb
   isDarkTheme: boolean;
   isReadOnly: boolean;
   onPropertiesUpdate: (props: Partial<ISmartDataVisualizationWebPartProps>) => void;
+  onItemSelected: (selection: IChartSelection) => void;
 }
