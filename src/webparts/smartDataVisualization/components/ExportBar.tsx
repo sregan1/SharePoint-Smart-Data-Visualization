@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as strings from 'SmartDataVisualizationWebPartStrings';
 import styles from './SmartDataVisualization.module.scss';
 
 interface IExportBarProps {
@@ -19,38 +20,38 @@ const ExportBar: React.FC<IExportBarProps> = ({
   hasChart,
 }) => (
   <div className={styles.exportBar}>
-    <span className={styles.exportLabel}>Export:</span>
+    <span className={styles.exportLabel}>{strings.ExportLabel}</span>
     <button
       className={styles.exportButton}
       onClick={onExportPng}
       disabled={!hasChart}
-      title="Download chart as PNG image"
+      title={strings.ExportPngTitle}
     >
-      <span className={styles.exportIcon}>🖼</span> PNG
+      <span className={styles.exportIcon} aria-hidden="true">🖼</span> PNG
     </button>
     <button
       className={styles.exportButton}
       onClick={onExportJpeg}
       disabled={!hasChart}
-      title="Download chart as JPEG image"
+      title={strings.ExportJpegTitle}
     >
-      <span className={styles.exportIcon}>📷</span> JPEG
+      <span className={styles.exportIcon} aria-hidden="true">📷</span> JPEG
     </button>
     <button
       className={styles.exportButton}
       onClick={onExportCsv}
       disabled={!hasData}
-      title="Download data as CSV"
+      title={strings.ExportCsvTitle}
     >
-      <span className={styles.exportIcon}>📄</span> CSV
+      <span className={styles.exportIcon} aria-hidden="true">📄</span> CSV
     </button>
     <button
       className={styles.exportButton}
       onClick={onExportExcel}
       disabled={!hasData}
-      title="Download data as Excel workbook"
+      title={strings.ExportExcelTitle}
     >
-      <span className={styles.exportIcon}>📊</span> Excel
+      <span className={styles.exportIcon} aria-hidden="true">📊</span> Excel
     </button>
   </div>
 );

@@ -111,34 +111,40 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
     return Version.parse('1.0');
   }
 
+  // Optional numeric fields: empty is valid (auto), anything else must parse as a number
+  private _validateOptionalNumber(value: string): string {
+    if (!value || !value.trim()) return '';
+    return isNaN(Number(value)) ? strings.NumericValidationError : '';
+  }
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     const chartTypes: { key: ChartType; text: string }[] = [
-      { key: 'bar', text: 'Bar Chart (Vertical)' },
-      { key: 'horizontalBar', text: 'Bar Chart (Horizontal)' },
-      { key: 'line', text: 'Line Chart' },
-      { key: 'area', text: 'Area Chart' },
-      { key: 'scatter', text: 'Scatter Plot' },
-      { key: 'pie', text: 'Pie Chart' },
-      { key: 'doughnut', text: 'Doughnut Chart' },
-      { key: 'bubble', text: 'Bubble Chart' },
-      { key: 'radar', text: 'Radar Chart' },
+      { key: 'bar', text: strings.ChartTypeBarLabel },
+      { key: 'horizontalBar', text: strings.ChartTypeHorizontalBarLabel },
+      { key: 'line', text: strings.ChartTypeLineLabel },
+      { key: 'area', text: strings.ChartTypeAreaLabel },
+      { key: 'scatter', text: strings.ChartTypeScatterLabel },
+      { key: 'pie', text: strings.ChartTypePieLabel },
+      { key: 'doughnut', text: strings.ChartTypeDoughnutLabel },
+      { key: 'bubble', text: strings.ChartTypeBubbleLabel },
+      { key: 'radar', text: strings.ChartTypeRadarLabel },
     ];
 
     const legendPositions = [
-      { key: 'top', text: 'Top' },
-      { key: 'bottom', text: 'Bottom' },
-      { key: 'left', text: 'Left' },
-      { key: 'right', text: 'Right' },
+      { key: 'top', text: strings.LegendTopLabel },
+      { key: 'bottom', text: strings.LegendBottomLabel },
+      { key: 'left', text: strings.LegendLeftLabel },
+      { key: 'right', text: strings.LegendRightLabel },
     ];
 
     const colorPalettes = [
-      { key: 'office', text: 'Office (Default)' },
-      { key: 'vibrant', text: 'Vibrant' },
-      { key: 'pastel', text: 'Pastel' },
-      { key: 'monochrome', text: 'Monochrome' },
-      { key: 'trafficLight', text: 'Traffic Light' },
-      { key: 'warm', text: 'Warm' },
-      { key: 'cool', text: 'Cool' },
+      { key: 'office', text: strings.PaletteOfficeLabel },
+      { key: 'vibrant', text: strings.PaletteVibrantLabel },
+      { key: 'pastel', text: strings.PalettePastelLabel },
+      { key: 'monochrome', text: strings.PaletteMonochromeLabel },
+      { key: 'trafficLight', text: strings.PaletteTrafficLightLabel },
+      { key: 'warm', text: strings.PaletteWarmLabel },
+      { key: 'cool', text: strings.PaletteCoolLabel },
     ];
 
     return {
@@ -155,7 +161,7 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
                 }),
                 PropertyPaneTextField('webPartHeader', {
                   label: strings.WebPartHeaderFieldLabel,
-                  placeholder: 'e.g. Sales Dashboard',
+                  placeholder: strings.WebPartHeaderPlaceholder,
                 }),
               ],
             },
@@ -200,11 +206,11 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
                 }),
                 PropertyPaneTextField('xAxisLabel', {
                   label: strings.XAxisLabelFieldLabel,
-                  placeholder: 'e.g. Month',
+                  placeholder: strings.XAxisPlaceholder,
                 }),
                 PropertyPaneTextField('yAxisLabel', {
                   label: strings.YAxisLabelFieldLabel,
-                  placeholder: 'e.g. Sales ($)',
+                  placeholder: strings.YAxisPlaceholder,
                 }),
               ],
             },
@@ -227,11 +233,11 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
                 }),
                 PropertyPaneTextField('valuePrefix', {
                   label: strings.ValuePrefixFieldLabel,
-                  placeholder: 'e.g. $',
+                  placeholder: strings.ValuePrefixPlaceholder,
                 }),
                 PropertyPaneTextField('valueSuffix', {
                   label: strings.ValueSuffixFieldLabel,
-                  placeholder: 'e.g. %',
+                  placeholder: strings.ValueSuffixPlaceholder,
                 }),
                 PropertyPaneSlider('valueDecimals', {
                   label: strings.ValueDecimalsFieldLabel,
@@ -251,11 +257,13 @@ export default class SmartDataVisualizationWebPart extends BaseClientSideWebPart
               groupFields: [
                 PropertyPaneTextField('yAxisMin', {
                   label: strings.YAxisMinFieldLabel,
-                  placeholder: 'Auto',
+                  placeholder: strings.AutoPlaceholder,
+                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
                 }),
                 PropertyPaneTextField('yAxisMax', {
                   label: strings.YAxisMaxFieldLabel,
-                  placeholder: 'Auto',
+                  placeholder: strings.AutoPlaceholder,
+                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
                 }),
                 PropertyPaneToggle('logScale', {
                   label: strings.LogScaleFieldLabel,

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { ChartType, IColumnConfig, isPieOrDoughnut, isScatterOrBubble } from '../types';
+import * as strings from 'SmartDataVisualizationWebPartStrings';
+import { ChartType, IColumnConfig, isPieOrDoughnut, isScatterOrBubble, fmt } from '../types';
 import styles from './SmartDataVisualization.module.scss';
 
 interface IColumnMapperProps {
@@ -23,6 +24,8 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
   const isPie = isPieOrDoughnut(chartType);
   const isScatterBubble = isScatterOrBubble(chartType);
   const isBubble = chartType === 'bubble';
+  // Unique id prefix so label/input pairing stays valid with multiple instances on a page
+  const idPrefix = React.useRef(`sdv-cm-${Math.random().toString(36).slice(2, 8)}`).current;
 
   const colorOverrides = seriesColors ? seriesColors.split(',') : [];
 
@@ -46,49 +49,36 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
     onChange({ yColumns: next });
   };
 
-  const xLabel = isRadar ? 'Category Column (X / Labels)' : isPie ? 'Label Column' : 'X Axis Column';
-  const yLabel = isPie ? 'Value Column' : isScatterBubble ? 'Y Axis Column' : 'Y Axis Column(s)';
+  const xLabel = isRadar ? strings.CategoryColumnLabel : isPie ? strings.LabelColumnLabel : strings.XAxisColumnLabel;
+  const yLabel = isPie ? strings.ValueColumnLabel : isScatterBubble ? strings.YAxisColumnLabel : strings.YAxisColumnsLabel;
 
   return (
     <div className={styles.editPanel}>
-      <div className={styles.sectionHeader}>Column Mapping</div>
+      <div className={styles.sectionHeader}>{strings.ColumnMappingSectionHeader}</div>
       <div className={styles.fieldRow}>
         <div className={styles.fieldGroup}>
-          <label>{xLabel}</label>
+          <label htmlFor={`${idPrefix}-x`}>{xLabel}</label>
           <select
+            id={`${idPrefix}-x`}
             value={config.xColumn}
             onChange={e => onChange({ xColumn: e.target.value })}
           >
-            <option value="">— Select column —</option>
+            <option value="">{strings.SelectColumnPlaceholder}</option>
             {columns.map(col => (
               <option key={col} value={col}>{col}</option>
             ))}
           </select>
         </div>
 
-        {isPie && (
+        {(isPie || isScatterBubble) && (
           <div className={styles.fieldGroup}>
-            <label>{yLabel}</label>
+            <label htmlFor={`${idPrefix}-y`}>{yLabel}</label>
             <select
+              id={`${idPrefix}-y`}
               value={config.yColumns?.[0] || ''}
               onChange={e => onChange({ yColumns: [e.target.value] })}
             >
-              <option value="">— Select column —</option>
-              {columns.map(col => (
-                <option key={col} value={col}>{col}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {isScatterBubble && (
-          <div className={styles.fieldGroup}>
-            <label>{yLabel}</label>
-            <select
-              value={config.yColumns?.[0] || ''}
-              onChange={e => onChange({ yColumns: [e.target.value] })}
-            >
-              <option value="">— Select column —</option>
+              <option value="">{strings.SelectColumnPlaceholder}</option>
               {columns.map(col => (
                 <option key={col} value={col}>{col}</option>
               ))}
@@ -98,12 +88,13 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
 
         {isBubble && (
           <div className={styles.fieldGroup}>
-            <label>Size / Radius Column</label>
+            <label htmlFor={`${idPrefix}-size`}>{strings.SizeColumnLabel}</label>
             <select
+              id={`${idPrefix}-size`}
               value={config.sizeColumn}
               onChange={e => onChange({ sizeColumn: e.target.value })}
             >
-              <option value="">— None (fixed size) —</option>
+              <option value="">{strings.NoSizeColumnOption}</option>
               {columns.map(col => (
                 <option key={col} value={col}>{col}</option>
               ))}
@@ -115,7 +106,7 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
       {!isPie && !isScatterBubble && (
         <div className={styles.fieldRow}>
           <div className={styles.fieldGroup} style={{ flex: '1 1 100%' }}>
-            <label>{yLabel} <span className={styles.helpText}>(select one or more; click swatch to set color)</span></label>
+            <label>{yLabel} <span className={styles.helpText}>{strings.YAxisColumnsHelp}</span></label>
             <ul className={styles.multiSelect}>
               {columns.map((col, colIdx) => {
                 const checked = config.yColumns?.includes(col) || false;
@@ -139,7 +130,8 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
                         className={styles.colorSwatch}
                         value={getSeriesColor(yIdx)}
                         onChange={e => setSeriesColor(yIdx, e.target.value)}
-                        title={`Color for ${col}`}
+                        title={fmt(strings.SeriesColorTitle, col)}
+                        aria-label={fmt(strings.SeriesColorTitle, col)}
                       />
                     )}
                   </li>

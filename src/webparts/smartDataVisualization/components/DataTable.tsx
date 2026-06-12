@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { IChartRecord } from '../types';
+import * as strings from 'SmartDataVisualizationWebPartStrings';
+import { IChartRecord, fmt } from '../types';
 import styles from './SmartDataVisualization.module.scss';
 
 interface IDataTableProps {
@@ -15,11 +16,13 @@ const DataTable: React.FC<IDataTableProps> = ({ data, columns }) => {
   if (!data.length || !columns.length) return null;
 
   const pageCount = Math.ceil(data.length / PAGE_SIZE);
-  const pageData = data.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  // Clamp in case the data shrank (e.g. a filter was applied) while on a later page
+  const safePage = Math.min(page, pageCount - 1);
+  const pageData = data.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div className={styles.sectionHeader}>Data Table ({data.length} rows)</div>
+      <div className={styles.sectionHeader}>{fmt(strings.DataTableHeader, data.length)}</div>
       <div className={styles.tableWrapper}>
         <table className={styles.dataTable}>
           <thead>
@@ -44,20 +47,20 @@ const DataTable: React.FC<IDataTableProps> = ({ data, columns }) => {
         <div className={styles.paginationBar}>
           <button
             className={styles.secondaryButton}
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0}
+            onClick={() => setPage(Math.max(0, safePage - 1))}
+            disabled={safePage === 0}
             style={{ padding: '4px 10px' }}
           >
-            ← Prev
+            {strings.PrevPageButton}
           </button>
-          <span>Page {page + 1} of {pageCount}</span>
+          <span>{fmt(strings.PageOfLabel, safePage + 1, pageCount)}</span>
           <button
             className={styles.secondaryButton}
-            onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
-            disabled={page === pageCount - 1}
+            onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))}
+            disabled={safePage === pageCount - 1}
             style={{ padding: '4px 10px' }}
           >
-            Next →
+            {strings.NextPageButton}
           </button>
         </div>
       )}

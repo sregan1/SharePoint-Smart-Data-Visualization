@@ -1,12 +1,8 @@
 import * as React from 'react';
-import * as XLSX from 'xlsx';
-import { spfi, SPFx } from '@pnp/sp';
-import '@pnp/sp/webs';
-import '@pnp/sp/lists';
-import '@pnp/sp/items';
-import * as Papa from 'papaparse';
+import * as strings from 'SmartDataVisualizationWebPartStrings';
 import { ISmartDataVisualizationProps } from './ISmartDataVisualizationProps';
-import { IChartRecord, IColumnConfig, IDataSourceConfig } from '../types';
+import { IChartRecord, IColumnConfig, IDataSourceConfig, extractColumns, fmt } from '../types';
+import { loadSharePointList, loadSharePointFile, loadRestApi } from '../services/dataLoaders';
 import DataSourcePanel from './DataSourcePanel';
 import ColumnMapper from './ColumnMapper';
 import DataControls from './DataControls';
@@ -32,22 +28,21 @@ interface ISmartDataVisualizationState {
   uploadedFileName: string;
 }
 
-const extractColumns = (rows: IChartRecord[]): string[] =>
-  rows.length ? Object.keys(rows[0]).filter(k => !k.startsWith('odata.') && k !== '__metadata') : [];
-
 const buildColumnConfig = (
   columns: string[],
   data: IChartRecord[],
   xColumn: string,
-  yColumns: string
+  yColumns: string,
+  labelColumn: string,
+  sizeColumn: string
 ): IColumnConfig => {
   const yCols = yColumns ? yColumns.split(',').filter(Boolean) : [];
   const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
   return {
     xColumn: xColumn || columns[0] || '',
     yColumns: yCols.length ? yCols : firstNumeric ? [firstNumeric] : (columns[1] ? [columns[1]] : []),
-    labelColumn: '',
-    sizeColumn: '',
+    labelColumn: labelColumn || '',
+    sizeColumn: sizeColumn || '',
   };
 };
 
@@ -55,6 +50,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   const {
     context,
     isReadOnly,
+    isDarkTheme,
     webPartHeader,
     showWebPartHeader,
     chartType,
@@ -98,7 +94,9 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       } catch { /* silent fail */ }
     }
 
-    const columnConfig = buildColumnConfig(columns, data, props.xColumn, props.yColumns);
+    const columnConfig = buildColumnConfig(
+      columns, data, props.xColumn, props.yColumns, props.labelColumn, props.sizeColumn
+    );
 
     return {
       data,
@@ -128,59 +126,45 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
 
   const [refreshKey, setRefreshKey] = React.useState(0);
 
+  // Latest column config, readable from async callbacks and event handlers without
+  // putting side effects inside setState updaters (updaters must stay pure —
+  // React can invoke them twice). Kept in sync by the two handlers that change it.
+  const columnConfigRef = React.useRef(state.columnConfig);
+
   // Async auto-load for network sources (SP list, SP file, REST API).
   // 'upload' is skipped — data is either pre-loaded from uploadedData or requires user interaction.
   React.useEffect(() => {
     const srcType = props.dataSourceType || 'upload';
     if (srcType === 'upload') return;
 
+    let cancelled = false;
     setState(prev => ({ ...prev, isLoading: true, autoLoadError: '' }));
 
     const load = async () => {
       try {
         let rows: IChartRecord[] = [];
-        const delim = props.delimiter || undefined;
 
         if (srcType === 'sharePointList') {
           if (!props.listName) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          const sp = spfi(props.siteUrl || context.pageContext.web.absoluteUrl).using(SPFx(context));
-          rows = (await sp.web.lists.getByTitle(props.listName).items.select('*').top(5000)()) as IChartRecord[];
+          rows = (await loadSharePointList(context, props.siteUrl, props.listName)).rows;
 
         } else if (srcType === 'sharePointFile') {
           if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          const response = await fetch(props.dataUrl, { credentials: 'same-origin' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const urlPath = props.dataUrl.split('?')[0].toLowerCase();
-          if (urlPath.endsWith('.xlsx') || urlPath.endsWith('.xls')) {
-            const buffer = await response.arrayBuffer();
-            const wb = XLSX.read(buffer, { type: 'array' });
-            rows = XLSX.utils.sheet_to_json<IChartRecord>(wb.Sheets[wb.SheetNames[0]]);
-          } else {
-            const result = Papa.parse<IChartRecord>(await response.text(), {
-              header: true, dynamicTyping: true, skipEmptyLines: true, delimiter: delim,
-            });
-            rows = result.data;
-          }
+          rows = (await loadSharePointFile(props.dataUrl, props.delimiter || undefined)).rows;
 
         } else if (srcType === 'restApi') {
           if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          const response = await fetch(props.dataUrl, {
-            headers: { Accept: 'application/json' }, credentials: 'same-origin',
-          });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          let json = await response.json();
-          if (props.dataPath) {
-            for (const part of props.dataPath.split('.')) json = json?.[part];
-          }
-          rows = Array.isArray(json) ? json : [json];
+          rows = (await loadRestApi(props.dataUrl, props.dataPath || undefined)).rows;
         }
 
+        if (cancelled) return;
         if (rows.length > 0) {
           handleDataLoaded(rows, extractColumns(rows));
         } else {
           setState(prev => ({ ...prev, isLoading: false }));
         }
       } catch (e) {
+        if (cancelled) return;
         setState(prev => ({
           ...prev,
           autoLoadError: e instanceof Error ? e.message : String(e),
@@ -190,34 +174,35 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     };
 
     load();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
   const handleDataLoaded = (data: IChartRecord[], columns: string[]) => {
     const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
-    setState(prev => {
-      const newColumnConfig: IColumnConfig = {
-        xColumn: prev.columnConfig.xColumn || columns[0] || '',
-        yColumns: prev.columnConfig.yColumns.length
-          ? prev.columnConfig.yColumns
-          : firstNumeric ? [firstNumeric] : (columns[1] ? [columns[1]] : []),
-        labelColumn: prev.columnConfig.labelColumn || '',
-        sizeColumn: prev.columnConfig.sizeColumn || '',
-      };
-      onPropertiesUpdate({
-        xColumn: newColumnConfig.xColumn,
-        yColumns: newColumnConfig.yColumns.join(','),
-      });
-      return {
-        ...prev,
-        data,
-        columns,
-        columnConfig: newColumnConfig,
-        autoLoadError: '',
-        isLoading: false,
-        isConfigOpen: false,
-      };
+    const prevConfig = columnConfigRef.current;
+    const newColumnConfig: IColumnConfig = {
+      xColumn: prevConfig.xColumn || columns[0] || '',
+      yColumns: prevConfig.yColumns.length
+        ? prevConfig.yColumns
+        : firstNumeric ? [firstNumeric] : (columns[1] ? [columns[1]] : []),
+      labelColumn: prevConfig.labelColumn || '',
+      sizeColumn: prevConfig.sizeColumn || '',
+    };
+    columnConfigRef.current = newColumnConfig;
+    onPropertiesUpdate({
+      xColumn: newColumnConfig.xColumn,
+      yColumns: newColumnConfig.yColumns.join(','),
     });
+    setState(prev => ({
+      ...prev,
+      data,
+      columns,
+      columnConfig: newColumnConfig,
+      autoLoadError: '',
+      isLoading: false,
+      isConfigOpen: false,
+    }));
   };
 
   // Called by DataSourcePanel when a file is uploaded and should be persisted.
@@ -256,16 +241,15 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   };
 
   const handleColumnConfigChange = (partial: Partial<IColumnConfig>) => {
-    setState(prev => {
-      const next = { ...prev.columnConfig, ...partial };
-      onPropertiesUpdate({
-        xColumn: next.xColumn,
-        yColumns: next.yColumns.join(','),
-        labelColumn: next.labelColumn,
-        sizeColumn: next.sizeColumn,
-      });
-      return { ...prev, columnConfig: next };
+    const next = { ...columnConfigRef.current, ...partial };
+    columnConfigRef.current = next;
+    onPropertiesUpdate({
+      xColumn: next.xColumn,
+      yColumns: next.yColumns.join(','),
+      labelColumn: next.labelColumn,
+      sizeColumn: next.sizeColumn,
     });
+    setState(prev => ({ ...prev, columnConfig: next }));
   };
 
   const handleSeriesColorsChange = (colors: string) => {
@@ -334,9 +318,9 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
               className={styles.configToggleButton}
               onClick={() => setState(prev => ({ ...prev, isConfigOpen: !prev.isConfigOpen }))}
             >
-              {isConfigOpen ? '▲ Hide Data Source' : '▼ Configure Data Source'}
+              {isConfigOpen ? strings.HideDataSourceButton : strings.ConfigureDataSourceButton}
               {hasData && !isConfigOpen && (
-                <span className={styles.configToggleBadge}> ✓ {state.data.length} rows loaded</span>
+                <span className={styles.configToggleBadge}> {fmt(strings.RowsLoadedBadge, state.data.length)}</span>
               )}
             </button>
           </div>
@@ -380,8 +364,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       )}
 
       {isReadOnly && !hasData && autoLoadError && (
-        <div className={styles.errorMessage}>
-          Could not load data: {autoLoadError}. Switch to Edit mode to reconfigure the data source.
+        <div className={styles.errorMessage} role="alert">
+          {fmt(strings.ReadModeLoadError, autoLoadError)}
         </div>
       )}
 
@@ -415,6 +399,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             logScale={logScale || false}
             showGridLines={showGridLines !== false}
             xLabelRotation={xLabelRotation !== undefined ? xLabelRotation : 0}
+            isDarkTheme={isDarkTheme}
           />
         )}
       </div>
@@ -425,9 +410,9 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             className={styles.refreshButton}
             onClick={handleRefresh}
             disabled={isLoading}
-            title="Reload data from the configured source"
+            title={strings.RefreshDataTitle}
           >
-            {isLoading ? 'Refreshing…' : '↻ Refresh Data'}
+            {isLoading ? strings.RefreshingLabel : strings.RefreshDataButton}
           </button>
         </div>
       )}

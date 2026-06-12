@@ -1,3 +1,5 @@
+import * as strings from 'SmartDataVisualizationWebPartStrings';
+
 export type ChartType =
   | 'bar'
   | 'horizontalBar'
@@ -59,6 +61,40 @@ export const PALETTES: Record<string, string[]> = {
   cool:        ['#0078d4','#2b88d8','#00b4d8','#038387','#007a7a','#0d73dd','#086f68','#00bcf2','#008272','#004e8c'],
 };
 
+// Scan multiple rows because REST APIs and XLSX.utils.sheet_to_json omit keys
+// for missing values — a column absent from row 1 would otherwise never appear.
+const COLUMN_SCAN_ROWS = 50;
+
+export const extractColumns = (rows: IChartRecord[]): string[] => {
+  const seen = new Set<string>();
+  const excluded = new Set<string>();
+  const columns: string[] = [];
+  const scanCount = Math.min(rows.length, COLUMN_SCAN_ROWS);
+  for (let i = 0; i < scanCount; i++) {
+    for (const key of Object.keys(rows[i])) {
+      // Object values (SharePoint lookup/person fields, nested JSON) can't be
+      // charted or displayed — they'd render as "[object Object]".
+      const value = rows[i][key] as unknown;
+      if (value !== null && typeof value === 'object') {
+        excluded.add(key);
+        continue;
+      }
+      if (!seen.has(key) && !key.startsWith('odata.') && key !== '__metadata') {
+        seen.add(key);
+        columns.push(key);
+      }
+    }
+  }
+  return columns.filter(c => !excluded.has(c));
+};
+
+// Substitute {0}, {1}, … placeholders in localized string templates.
+export const fmt = (template: string, ...args: (string | number)[]): string =>
+  template.replace(/\{(\d+)\}/g, (match, idx) => {
+    const arg = args[Number(idx)];
+    return arg !== undefined ? String(arg) : match;
+  });
+
 export const resolveColors = (palette: string, seriesColors: string, count: number): string[] => {
   const base = PALETTES[palette] || PALETTES.office;
   const overrides = seriesColors ? seriesColors.split(',') : [];
@@ -68,23 +104,11 @@ export const resolveColors = (palette: string, seriesColors: string, count: numb
   });
 };
 
-export const CHART_TYPE_LABELS: Record<ChartType, string> = {
-  bar: 'Bar Chart (Vertical)',
-  horizontalBar: 'Bar Chart (Horizontal)',
-  line: 'Line Chart',
-  area: 'Area Chart',
-  scatter: 'Scatter Plot',
-  pie: 'Pie Chart',
-  doughnut: 'Doughnut Chart',
-  bubble: 'Bubble Chart',
-  radar: 'Radar Chart',
-};
-
 export const DATA_SOURCE_LABELS: Record<DataSourceType, string> = {
-  upload: 'Upload File',
-  sharePointList: 'SharePoint List',
-  sharePointFile: 'SharePoint File',
-  restApi: 'REST API',
+  upload: strings.SourceUploadLabel,
+  sharePointList: strings.SourceSharePointListLabel,
+  sharePointFile: strings.SourceSharePointFileLabel,
+  restApi: strings.SourceRestApiLabel,
 };
 
 export const DATA_SOURCE_ICONS: Record<DataSourceType, string> = {
