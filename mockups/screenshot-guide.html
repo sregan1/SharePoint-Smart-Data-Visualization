@@ -966,6 +966,391 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     SECTION — ADVANCED CHART TYPES (v2.0)
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="advanced-charts">Advanced Chart Types</h2>
+<p class="section-desc">Six chart types available with <strong>Show Advanced Options</strong> turned on.</p>
+
+<div class="chart-grid">
+
+  <!-- KPI Tile -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 10</span>
+      <span class="title">KPI Tile</span>
+      <span class="hint">monthly-sales.csv — Sum of Revenue</span>
+    </div>
+    <div class="webpart">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 24px;min-height:240px;">
+        <div style="font-size:16px;font-weight:600;color:#323130;">Total Revenue</div>
+        <div style="font-size:56px;font-weight:700;line-height:1.1;color:#107c10;">$5,247K</div>
+        <div style="font-size:12px;color:#605e5c;">Revenue • 12 rows</div>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">📄 CSV</button>
+        <button class="export-btn">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Histogram -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 11</span>
+      <span class="title">Histogram</span>
+      <span class="hint">study-hours-scores.csv — Test Score, 6 bins</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Test Score Distribution</span></div>
+      <div class="chart-container"><canvas id="c-histogram" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waterfall -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 12</span>
+      <span class="title">Waterfall Chart</span>
+      <span class="hint">monthly-sales.csv — Profit by month</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Profit Bridge — H1</span></div>
+      <div class="chart-container"><canvas id="c-waterfall" height="240"></canvas></div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Box Plot (hand-drawn SVG) -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 13</span>
+      <span class="title">Box Plot</span>
+      <span class="hint">study-hours-scores.csv — Score by Study Hours</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Score Spread by Study Time</span></div>
+      <div class="chart-container">
+        <svg viewBox="0 0 520 250" style="width:100%;height:auto;font-family:'Segoe UI',sans-serif;">
+          <!-- gridlines -->
+          <g stroke="#edebe9" stroke-width="1">
+            <line x1="40" y1="20" x2="500" y2="20"/><line x1="40" y1="65" x2="500" y2="65"/>
+            <line x1="40" y1="110" x2="500" y2="110"/><line x1="40" y1="155" x2="500" y2="155"/>
+            <line x1="40" y1="200" x2="500" y2="200"/>
+          </g>
+          <g font-size="10" fill="#605e5c">
+            <text x="34" y="24" text-anchor="end">100</text><text x="34" y="69" text-anchor="end">75</text>
+            <text x="34" y="114" text-anchor="end">50</text><text x="34" y="159" text-anchor="end">25</text>
+            <text x="34" y="204" text-anchor="end">0</text>
+          </g>
+          <!-- boxes: x, whiskerTop, boxTop, median, boxBottom, whiskerBottom -->
+          <g stroke="#0078d4" stroke-width="1.5" fill="#0078d440">
+            <line x1="85" y1="150" x2="85" y2="186"/><line x1="85" y1="96" x2="85" y2="122"/><rect x="63" y="122" width="44" height="28"/><line x1="63" y1="138" x2="107" y2="138" stroke-width="2.5"/><line x1="74" y1="186" x2="96" y2="186"/><line x1="74" y1="96" x2="96" y2="96"/>
+            <line x1="177" y1="132" x2="177" y2="168"/><line x1="177" y1="78" x2="177" y2="104"/><rect x="155" y="104" width="44" height="28"/><line x1="155" y1="120" x2="199" y2="120" stroke-width="2.5"/><line x1="166" y1="168" x2="188" y2="168"/><line x1="166" y1="78" x2="188" y2="78"/>
+            <line x1="269" y1="114" x2="269" y2="146"/><line x1="269" y1="58" x2="269" y2="86"/><rect x="247" y="86" width="44" height="28"/><line x1="247" y1="102" x2="291" y2="102" stroke-width="2.5"/><line x1="258" y1="146" x2="280" y2="146"/><line x1="258" y1="58" x2="280" y2="58"/>
+            <line x1="361" y1="92" x2="361" y2="124"/><line x1="361" y1="40" x2="361" y2="64"/><rect x="339" y="64" width="44" height="28"/><line x1="339" y1="80" x2="383" y2="80" stroke-width="2.5"/><line x1="350" y1="124" x2="372" y2="124"/><line x1="350" y1="40" x2="372" y2="40"/>
+            <line x1="453" y1="80" x2="453" y2="108"/><line x1="453" y1="28" x2="453" y2="52"/><rect x="431" y="52" width="44" height="28"/><line x1="431" y1="68" x2="475" y2="68" stroke-width="2.5"/><line x1="442" y1="108" x2="464" y2="108"/><line x1="442" y1="28" x2="464" y2="28"/>
+          </g>
+          <!-- outliers -->
+          <circle cx="177" cy="190" r="3" fill="#0078d4"/><circle cx="361" cy="140" r="3" fill="#0078d4"/>
+          <g font-size="11" fill="#323130" text-anchor="middle">
+            <text x="85" y="225">1–2 h</text><text x="177" y="225">3–4 h</text><text x="269" y="225">5–6 h</text>
+            <text x="361" y="225">7–8 h</text><text x="453" y="225">9+ h</text>
+          </g>
+        </svg>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Treemap (CSS tiles) -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 14</span>
+      <span class="title">Treemap</span>
+      <span class="hint">market-share.csv — share by product</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Market Share by Product</span></div>
+      <div style="display:flex;gap:2px;height:240px;margin-bottom:16px;">
+        <div style="flex:35;display:flex;align-items:center;justify-content:center;background:#0078d4cc;border:1px solid white;color:white;font-weight:600;font-size:15px;">Alpha 35%</div>
+        <div style="flex:37;display:flex;flex-direction:column;gap:2px;">
+          <div style="flex:28;display:flex;align-items:center;justify-content:center;background:#00b4d8cc;border:1px solid white;color:white;font-weight:600;font-size:14px;">Beta 28%</div>
+          <div style="flex:18;display:flex;align-items:center;justify-content:center;background:#107c10cc;border:1px solid white;color:white;font-weight:600;font-size:13px;">Gamma 18%</div>
+        </div>
+        <div style="flex:19;display:flex;flex-direction:column;gap:2px;">
+          <div style="flex:12;display:flex;align-items:center;justify-content:center;background:#ffb900cc;border:1px solid white;color:white;font-weight:600;font-size:12px;">Delta 12%</div>
+          <div style="flex:7;display:flex;align-items:center;justify-content:center;background:#d13438cc;border:1px solid white;color:white;font-weight:600;font-size:11px;">Other 7%</div>
+        </div>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap (CSS grid) -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 15</span>
+      <span class="title">Heatmap</span>
+      <span class="hint">region × month, color = revenue intensity</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Revenue Intensity — Region × Month</span></div>
+      <div style="display:grid;grid-template-columns:78px repeat(6,1fr);gap:3px;font-size:11px;margin-bottom:16px;">
+        <div></div>
+        <div style="text-align:center;color:#605e5c;">Jan</div><div style="text-align:center;color:#605e5c;">Feb</div><div style="text-align:center;color:#605e5c;">Mar</div><div style="text-align:center;color:#605e5c;">Apr</div><div style="text-align:center;color:#605e5c;">May</div><div style="text-align:center;color:#605e5c;">Jun</div>
+        <div style="color:#323130;align-self:center;">Northeast</div>
+        <div style="height:34px;background:#0078d4b0;border-radius:2px;"></div><div style="height:34px;background:#0078d4d0;border-radius:2px;"></div><div style="height:34px;background:#0078d4ff;border-radius:2px;"></div><div style="height:34px;background:#0078d490;border-radius:2px;"></div><div style="height:34px;background:#0078d4c0;border-radius:2px;"></div><div style="height:34px;background:#0078d4e0;border-radius:2px;"></div>
+        <div style="color:#323130;align-self:center;">Southeast</div>
+        <div style="height:34px;background:#0078d470;border-radius:2px;"></div><div style="height:34px;background:#0078d490;border-radius:2px;"></div><div style="height:34px;background:#0078d4a0;border-radius:2px;"></div><div style="height:34px;background:#0078d4d0;border-radius:2px;"></div><div style="height:34px;background:#0078d4b0;border-radius:2px;"></div><div style="height:34px;background:#0078d480;border-radius:2px;"></div>
+        <div style="color:#323130;align-self:center;">Midwest</div>
+        <div style="height:34px;background:#0078d440;border-radius:2px;"></div><div style="height:34px;background:#0078d460;border-radius:2px;"></div><div style="height:34px;background:#0078d490;border-radius:2px;"></div><div style="height:34px;background:#0078d4b0;border-radius:2px;"></div><div style="height:34px;background:#0078d470;border-radius:2px;"></div><div style="height:34px;background:#0078d450;border-radius:2px;"></div>
+        <div style="color:#323130;align-self:center;">Southwest</div>
+        <div style="height:34px;background:#0078d460;border-radius:2px;"></div><div style="height:34px;background:#0078d430;border-radius:2px;"></div><div style="height:34px;background:#0078d450;border-radius:2px;"></div><div style="height:34px;background:#0078d480;border-radius:2px;"></div><div style="height:34px;background:#0078d4a0;border-radius:2px;"></div><div style="height:34px;background:#0078d4c0;border-radius:2px;"></div>
+        <div style="color:#323130;align-self:center;">Northwest</div>
+        <div style="height:34px;background:#0078d490;border-radius:2px;"></div><div style="height:34px;background:#0078d4a0;border-radius:2px;"></div><div style="height:34px;background:#0078d470;border-radius:2px;"></div><div style="height:34px;background:#0078d4e0;border-radius:2px;"></div><div style="height:34px;background:#0078d4ff;border-radius:2px;"></div><div style="height:34px;background:#0078d4d0;border-radius:2px;"></div>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION — INTERACTIVITY (v2.0)
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="interactivity">Interactivity</h2>
+<p class="section-desc">Spotfire-style features for page viewers: drill-down, viewer filters, details on demand.</p>
+
+<!-- Drill-down -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Drill-Down with Breadcrumbs</span>
+    <span class="hint">Hierarchy: Region → State — drilled into West</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Revenue Explorer</span></div>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;font-size:12px;">
+      <span style="color:#0078d4;cursor:default;padding:2px 4px;">All</span>
+      <span style="color:#8a8886;">›</span>
+      <span style="font-weight:600;color:#323130;padding:2px 4px;">West</span>
+    </div>
+    <div class="chart-container"><canvas id="c-drill" height="220"></canvas></div>
+    <div class="export-bar">
+      <span class="export-label">Export:</span>
+      <button class="export-btn">🖼 PNG</button>
+      <button class="export-btn">📄 CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- Viewer filters -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Viewer Filter Bar</span>
+    <span class="hint">View mode — visitors filter without editing the page</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Regional Revenue</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="font-size:12px;font-weight:600;color:#323130;">Filter:</span>
+      <select style="padding:4px 8px;border:1px solid #c8c6c4;border-radius:2px;font-size:12px;font-family:inherit;"><option>Region</option></select>
+      <input type="text" value="North" style="padding:4px 8px;border:1px solid #c8c6c4;border-radius:2px;font-size:12px;font-family:inherit;width:140px;">
+      <button class="btn-secondary">Clear</button>
+    </div>
+    <div class="chart-container"><canvas id="c-viewerfilter" height="200"></canvas></div>
+  </div>
+</div>
+
+<!-- Details on demand -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Details on Demand</span>
+    <span class="hint">Clicked the Apr bar — underlying rows appear below</span>
+  </div>
+  <div class="webpart">
+    <div class="wp-header"><span class="wp-header-text">Quarterly Orders</span></div>
+    <div class="chart-container"><canvas id="c-details" height="180"></canvas></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:6px 10px;background:#eff6fc;border:1px solid #c7e0f4;border-radius:2px;font-size:12px;">
+      <span>Details: Apr (3 rows)</span>
+      <button class="btn-secondary">Clear</button>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead><tr><th>Month</th><th>Customer</th><th>Product</th><th>Amount</th></tr></thead>
+        <tbody>
+          <tr><td>Apr</td><td>Contoso Ltd.</td><td>Alpha</td><td>$152,000</td></tr>
+          <tr><td>Apr</td><td>Fabrikam Inc.</td><td>Beta</td><td>$98,500</td></tr>
+          <tr><td>Apr</td><td>Northwind</td><td>Alpha</td><td>$159,500</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Advanced options panel -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Advanced Options Panel</span>
+    <span class="hint">Edit mode, Show Advanced Options on — collapsed by default</span>
+  </div>
+  <div class="webpart">
+    <div class="edit-panel">
+      <button class="config-toggle-btn" style="margin-bottom:12px;">▲ Advanced Options</button>
+      <div style="display:flex;gap:16px;margin-bottom:12px;">
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Drill Level 1</label>
+          <select><option>Region</option></select>
+        </div>
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Drill Level 2</label>
+          <select><option>State</option></select>
+        </div>
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Drill Level 3</label>
+          <select><option>— None —</option></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Tooltip Columns <span style="font-weight:normal;color:#797775;">(extra columns shown when hovering)</span></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="padding:4px 10px;background:#eff6fc;border:1px solid #0078d4;border-radius:2px;font-size:12px;">☑ Owner</span>
+          <span style="padding:4px 10px;background:#eff6fc;border:1px solid #0078d4;border-radius:2px;font-size:12px;">☑ Status</span>
+          <span style="padding:4px 10px;background:white;border:1px solid #c8c6c4;border-radius:2px;font-size:12px;">☐ Notes</span>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:14px;">Bookmarks</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Bookmark Name</label>
+          <input type="text" placeholder="e.g. Top 10 by Region">
+        </div>
+        <button class="btn-secondary">Save Current View</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #edebe9;font-size:12px;">
+        <span style="flex:1;font-weight:600;">Top 10 by Region</span>
+        <button class="btn-secondary">Apply</button>
+        <button class="btn-secondary">Delete</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">
+        <span style="flex:1;font-weight:600;">FY26 Summary</span>
+        <button class="btn-secondary">Apply</button>
+        <button class="btn-secondary">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Property pane: Advanced page -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Settings</span>
+    <span class="title">Property Pane — Advanced Page</span>
+    <span class="hint">Analytics, reference line, interactivity, data &amp; refresh</span>
+  </div>
+  <div class="pp-layout">
+    <div class="pp-main">
+      <div class="pp-main-inner">
+        <div class="pp-main-title">Monthly Revenue</div>
+        <div class="pp-chart-placeholder">
+          <div class="pp-chart-bar" style="height:58%"></div>
+          <div class="pp-chart-bar" style="height:78%"></div>
+          <div class="pp-chart-bar" style="height:67%"></div>
+          <div class="pp-chart-bar" style="height:96%"></div>
+          <div class="pp-chart-bar" style="height:87%"></div>
+          <div class="pp-chart-bar" style="height:100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="property-pane">
+      <div class="pp-header">
+        <span class="pp-header-title">Edit web part</span>
+        <button class="pp-close">✕</button>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Analytics <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-field">
+            <label>Trendline</label>
+            <select><option>Linear</option></select>
+          </div>
+          <div class="pp-field">
+            <label>Forecast Periods (linear trendline)</label>
+            <div class="pp-slider-row">
+              <input type="range" class="pp-slider" min="0" max="12" value="3" style="pointer-events:none;">
+              <span class="pp-slider-val">3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Reference Line <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Interactivity <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Show Filters to Viewers</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+          <div class="pp-toggle-row">
+            <span class="pp-toggle-lbl">Details on Demand</span>
+            <span class="pp-toggle"><div class="pp-track on"><div class="pp-thumb"></div></div><span class="pp-toggle-val">On</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr collapsed">Conditional Formatting <span class="pp-chevron">▼</span></div>
+      </div>
+      <div class="pp-group">
+        <div class="pp-group-hdr">Data &amp; Refresh <span class="pp-chevron">▲</span></div>
+        <div class="pp-group-body">
+          <div class="pp-field">
+            <label>Auto-Refresh Interval (minutes, 0 = off)</label>
+            <div class="pp-slider-row">
+              <input type="range" class="pp-slider" min="0" max="60" value="15" style="pointer-events:none;">
+              <span class="pp-slider-val">15</span>
+            </div>
+          </div>
+          <div class="pp-field">
+            <label>Cache API Results (minutes, 0 = off)</label>
+            <div class="pp-slider-row">
+              <input type="range" class="pp-slider" min="0" max="60" value="10" style="pointer-events:none;">
+              <span class="pp-slider-val">10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- .content -->
 
 <script>
@@ -1274,6 +1659,91 @@ new Chart(document.getElementById('c-table-chart'), {
   data: {
     labels: months,
     datasets: [{ label: 'Revenue ($K)', data: revenue, backgroundColor: c[0]+'cc', borderColor: c[0], borderWidth: 2 }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+
+// ─── Chart 11: Histogram ─────────────────────────────────────────
+new Chart(document.getElementById('c-histogram'), {
+  type: 'bar',
+  data: {
+    labels: ['40–50','50–60','60–70','70–80','80–90','90–100'],
+    datasets: [{
+      label: 'Students',
+      data: [2,4,7,11,8,3],
+      backgroundColor: c[0]+'cc',
+      borderColor: c[0],
+      borderWidth: 1,
+      barPercentage: 1.0,
+      categoryPercentage: 0.95,
+    }]
+  },
+  options: baseOpts,
+});
+
+// ─── Chart 12: Waterfall (floating bars) ─────────────────────────
+const wfDeltas = [48, 58, -24, 80, -15, 90];
+let wfCum = 0;
+const wfRanges = wfDeltas.map(d => { const s = wfCum; wfCum += d; return [s, wfCum]; });
+new Chart(document.getElementById('c-waterfall'), {
+  type: 'bar',
+  data: {
+    labels: months.slice(0, 6),
+    datasets: [{
+      label: 'Profit ($K)',
+      data: wfRanges,
+      backgroundColor: wfDeltas.map(d => d >= 0 ? c[0]+'cc' : '#d13438cc'),
+      borderColor: wfDeltas.map(d => d >= 0 ? c[0] : '#d13438'),
+      borderWidth: 1,
+    }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+
+// ─── Feature: Drill-down (West → states) ─────────────────────────
+new Chart(document.getElementById('c-drill'), {
+  type: 'bar',
+  data: {
+    labels: ['California','Washington','Oregon','Nevada','Arizona'],
+    datasets: [{
+      label: 'Revenue ($K)',
+      data: [180, 95, 62, 38, 53],
+      backgroundColor: c[0]+'cc',
+      borderColor: c[0],
+      borderWidth: 2,
+    }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+
+// ─── Feature: Viewer filter (filtered to "North…" regions) ───────
+new Chart(document.getElementById('c-viewerfilter'), {
+  type: 'bar',
+  data: {
+    labels: ['Northeast','Northwest'],
+    datasets: [{
+      label: 'Revenue ($K)',
+      data: [428, 398],
+      backgroundColor: c[0]+'cc',
+      borderColor: c[0],
+      borderWidth: 2,
+    }]
+  },
+  options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+
+// ─── Feature: Details on demand ──────────────────────────────────
+new Chart(document.getElementById('c-details'), {
+  type: 'bar',
+  data: {
+    labels: months.slice(0, 6),
+    datasets: [{
+      label: 'Orders ($K)',
+      data: [285, 320, 298, 410, 387, 452],
+      backgroundColor: months.slice(0, 6).map((_, i) => i === 3 ? c[3]+'cc' : c[0]+'cc'),
+      borderColor: months.slice(0, 6).map((_, i) => i === 3 ? c[3] : c[0]),
+      borderWidth: 2,
+    }]
   },
   options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
 });

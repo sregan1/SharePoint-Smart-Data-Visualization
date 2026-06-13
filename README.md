@@ -2,26 +2,33 @@
 
 [![Website](https://img.shields.io/badge/Website-sharepointsmartsolutions.com-blue)](https://sharepointsmartsolutions.com/smart-data-visualization) [![User Guide](https://img.shields.io/badge/User%20Guide-Read%20Now-green)](USER-GUIDE.md) [![Download](https://img.shields.io/badge/Download-Latest%20Release-CA5010?logo=github&logoColor=white)](../../releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required. Configure everything through the SharePoint page editor.
+A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required — 15 chart types, drill-down, bookmarks, trendlines, and click-to-filter integration, all configured through the SharePoint page editor.
 
-![SPFx](https://img.shields.io/badge/SPFx-1.20-0078D4?logo=microsoft&logoColor=white) ![React](https://img.shields.io/badge/React-17-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-4.7-3178C6?logo=typescript&logoColor=white) ![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white)
+![SPFx](https://img.shields.io/badge/SPFx-1.20-0078D4?logo=microsoft&logoColor=white) ![React](https://img.shields.io/badge/React-17-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-4.7-3178C6?logo=typescript&logoColor=white) ![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white) ![PnPjs](https://img.shields.io/badge/PnPjs-3.22-0078D4)
+
+![Hero chart with web part header](screenshots/hero-chart.png)
 
 ---
 
 ## Features
 
+### Simple by Default, Advanced on Demand
+
+The web part starts in **simple mode** — one property pane page and a streamlined editor. Flip **Show Advanced Options** in the property pane to unlock additional pages for appearance tuning, analytics, and interactivity. Advanced features that are already configured keep working even when the toggle is off, so simplifying the UI never breaks a published chart. All 15 chart types are available in both modes.
+
 ### Data Sources
 
 | Source | Description |
 |---|---|
-| **Upload File** | Upload a CSV, Excel (.xlsx), or Excel 97–2003 (.xls) file directly from your computer. Data persists across page reloads (up to 200 KB). |
-| **SharePoint List** | Load data from any SharePoint list on the current or another site |
+| **Upload File** | Upload a CSV, TSV, or Excel (.xlsx / .xls) file directly from your computer. Data persists across page reloads (up to 200 KB). Multi-sheet workbooks get a sheet picker. |
+| **SharePoint List** | Load data from any SharePoint list on the current or another site (up to 5,000 items, with a warning when truncated) |
 | **SharePoint File** | Reference a CSV or Excel file stored in a SharePoint document library by URL |
-| **REST API** | Connect to any REST endpoint that returns JSON data |
+| **REST API** | Connect to any REST endpoint that returns JSON, with optional response caching |
+| **Microsoft Graph** | Chart any Graph endpoint (e.g. `/me/memberOf`) — requires admin-approved permissions |
 
 ### Chart Types
 
-![Gallery showing all nine chart types](screenshots/chart-gallery.png)
+![Gallery showing chart types](screenshots/chart-gallery.png)
 
 | Chart | Best Used For |
 |---|---|
@@ -34,15 +41,45 @@ A SharePoint Framework (SPFx) web part that renders interactive charts from mult
 | **Pie** | Part-to-whole relationships (up to ~7 categories) |
 | **Doughnut** | Same as pie with a center hole for labels or KPIs |
 | **Radar** | Multi-attribute comparison across several items |
+| **KPI Tile** | A single aggregated number with threshold coloring — dashboard headlines |
+| **Histogram** | Distribution of a numeric column, with configurable bins |
+| **Waterfall** | Cumulative gains and losses (e.g. monthly P&L) |
+| **Box Plot** | Value distribution and outliers per category |
+| **Treemap** | Proportions as nested area tiles |
+| **Heatmap** | Intensity across two category dimensions |
+
+### Data Shaping & Analytics
+
+- **Group-by aggregation** — Sum, Average, Count, Min, or Max per category, applied before charting
+- **Sort, filter, and row limit** — shape the data inline without touching the source
+- **Trendlines & forecast** — linear regression or moving average overlays; project the trend up to 12 periods ahead
+- **Reference lines** — fixed value, mean, or median drawn as a dashed line
+- **Date/time X axis** — date columns are auto-detected and plotted on a true time scale
+- **Conditional formatting** — highlight values above or below a threshold in a custom color
+- **Combo charts** — mix bars and lines per series on the same chart
+
+### Interactivity
+
+![Drill-down with breadcrumb navigation](screenshots/feature-drilldown.png)
+
+- **Viewer filters** — opt-in filter bar so page visitors can slice the data themselves
+- **Details on demand** — click a bar or slice to see the underlying rows
+- **Drill-down** — define a column hierarchy (e.g. Region → Country → City) and click to drill, with breadcrumb navigation
+- **Bookmarks** — save named view states; viewers pick them from a dropdown
+- **Dynamic Data** — chart clicks publish the selected category/value/series to connected web parts
+- **Custom tooltips** — append extra columns from the hovered row
+- **Auto-refresh & caching** — reload network sources on an interval, cache API responses per session
 
 ### Other Features
 
 - **Web part header** — optional title above the chart, toggled from the property pane
-- **7 color palettes** — Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool
+- **7 color palettes** — Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool — plus per-series color overrides and color-by-category for scatter/bubble
 - **Data labels** — optional value annotations with prefix/suffix and K/M abbreviation
 - **Stacked bars** — toggle stacking on Bar and Line charts
 - **Data table** — optional tabular view below the chart, paginated
-- **Export** — download as PNG, JPEG, CSV, or Excel from every chart
+- **Export** — download as PNG, JPEG, CSV (UTF-8 with BOM, Excel-safe), or Excel from every chart
+- **Dark theme support** — chart colors adapt to dark section backgrounds
+- **Localized & accessible** — all UI strings localizable; screen-reader-friendly charts and forms
 
 ---
 
@@ -62,6 +99,16 @@ See [Chart Types](#chart-types) above for individual chart screenshots.
 | **Data Table** | **Stacked Mode** |
 | ![Property pane — chart settings](screenshots/settings-chart-settings.png) | ![Property pane — data labels and axes](screenshots/settings-data-labels.png) |
 | **Property Pane — Chart Settings** | **Property Pane — Data Labels & Axes** |
+| ![KPI tile](screenshots/chart-kpi.png) | ![Histogram](screenshots/chart-histogram.png) |
+| **KPI Tile** | **Histogram** |
+| ![Waterfall chart](screenshots/chart-waterfall.png) | ![Box plot](screenshots/chart-boxplot.png) |
+| **Waterfall** | **Box Plot** |
+| ![Treemap](screenshots/chart-treemap.png) | ![Heatmap](screenshots/chart-heatmap.png) |
+| **Treemap** | **Heatmap** |
+| ![Viewer filter bar](screenshots/feature-viewer-filters.png) | ![Details on demand](screenshots/feature-details-on-demand.png) |
+| **Viewer Filter Bar** | **Details on Demand** |
+| ![Advanced options panel](screenshots/feature-advanced-options.png) | ![Property pane — advanced page](screenshots/settings-advanced.png) |
+| **Advanced Options Panel** | **Property Pane — Advanced Page** |
 
 ---
 
@@ -72,7 +119,8 @@ The pre-built package is included in the repository. To deploy without installin
 1. Download `sharepoint/solution/smart-data-visualization.sppkg` from this repository.
 2. Upload it to your **SharePoint App Catalog** (SharePoint Admin Center → Advanced → App Catalog → Apps for SharePoint).
 3. Check **Make this solution available to all sites** and click **Deploy**.
-4. On any modern SharePoint page, click **Edit** → **+** → search for **Smart Data Visualization**.
+4. (Only if you plan to use the **Microsoft Graph** data source) approve the pending Graph permission request — see [Graph API Permissions](#graph-api-permissions).
+5. On any modern SharePoint page, click **Edit** → **+** → search for **Smart Data Visualization**.
 
 ---
 
@@ -80,10 +128,12 @@ The pre-built package is included in the repository. To deploy without installin
 
 | Requirement | Detail |
 |---|---|
-| **Node.js** | 18.x LTS |
+| **Node.js** | 18.x LTS (`>=16.13.0 <19.0.0`) |
 | **npm** | 8+ |
 | **Gulp CLI** | `npm install -g gulp-cli` |
 | **SharePoint** | Online (Microsoft 365) |
+| **SPFx** | 1.20 |
+| **Permissions to deploy** | Site Owner or above |
 
 ---
 
@@ -127,73 +177,112 @@ gulp package-solution --ship
 
 ## Configuration
 
-All settings are managed through the web part property pane (click the pencil icon while the page is in Edit mode).
+All settings are managed through the web part property pane (click the pencil icon while the page is in Edit mode). Data source selection, column mapping, data controls, and the Advanced Options panel live **inline in the web part** while editing, because they depend on the loaded data.
+
+By default the pane shows a single page of essentials. Turning on **Show Advanced Options** (bottom of the first page) expands it to three pages — **Chart**, **Appearance**, and **Advanced** — and reveals the additional inline panels.
+
+### Page 1 — Chart
 
 **Header**
 
 | Setting | Default | Description |
 |---|---|---|
-| **Show Header** | Off | Display a prominent title above the chart |
+| **Show Header** | On | Display a prominent title above the chart |
 | **Header Text** | _(blank)_ | The title text shown in the header |
 
 **Chart Settings**
 
 | Setting | Default | Description |
 |---|---|---|
-| **Chart Type** | Bar (Vertical) | Visualization style — 9 options |
+| **Chart Type** | Bar (Vertical) | 15 types organized in Standard and Specialized groups |
 | **Chart Title** | _(blank)_ | Title rendered inside the chart canvas |
+| **Legend Position** | Bottom | Top, Bottom, Left, or Right |
 | **Chart Height** | 400 px | Height of the chart in pixels |
 | **Show Legend** | On | Toggle the chart legend on/off |
-| **Legend Position** | Bottom | Top, Bottom, Left, or Right |
 | **Stacked** | Off | Stack multiple series (Bar and Line charts) |
 | **Show Data Table** | Off | Display a paginated data table below the chart |
 | **Show Export Bar** | On | Show PNG / JPEG / CSV / Excel export buttons |
-| **X Axis Label** | _(blank)_ | Label along the horizontal axis |
-| **Y Axis Label** | _(blank)_ | Label along the vertical axis |
+| **X / Y Axis Label** | _(blank)_ | Labels along each axis |
+| **Histogram Bins** | 10 | Number of bins (4–50) — Histogram chart type only |
 
-**Colors**
-
-| Setting | Default | Description |
-|---|---|---|
-| **Color Palette** | Office | Choose from 7 palettes: Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool |
-
-**Data Labels**
+**Advanced**
 
 | Setting | Default | Description |
 |---|---|---|
+| **Show Advanced Options** | Off | Master switch for advanced settings and configuration panels |
+
+### Page 2 — Appearance (advanced mode)
+
+| Setting | Default | Description |
+|---|---|---|
+| **Color Palette** | Office | 7 palettes: Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool |
 | **Show Data Labels** | Off | Annotate each data point with its value |
-| **Label Prefix** | _(blank)_ | Text prepended to each label (e.g. `$`) |
-| **Label Suffix** | _(blank)_ | Text appended to each label (e.g. `%`) |
-| **Decimal Places** | 0 | Number of decimal places shown (0–4) |
-| **Abbreviate Large Numbers** | Off | Abbreviates 1000 → 1K, 1000000 → 1M |
+| **Value Prefix / Suffix** | _(blank)_ | Text around each label (e.g. `$`, `%`) |
+| **Decimal Places** | 0 | Decimal places shown (0–4) |
+| **Abbreviate Numbers (K/M)** | Off | Abbreviates 1,000 → 1K, 1,000,000 → 1M |
+| **Y Axis Minimum / Maximum** | _(auto)_ | Override the Y axis range (validated numeric) |
+| **Logarithmic Scale** | Off | Switch the Y axis to log scale |
+| **Show Grid Lines** | On | Toggle grid lines |
+| **X Label Rotation** | 0° | Degrees to rotate X axis labels |
+| **X Axis Type** | Auto-detect | Auto-detect / Category / Time (dates) |
 
-**Axes & Grid**
+### Page 3 — Advanced (advanced mode)
 
 | Setting | Default | Description |
 |---|---|---|
-| **Y Axis Min** | _(auto)_ | Override the minimum value of the Y axis |
-| **Y Axis Max** | _(auto)_ | Override the maximum value of the Y axis |
-| **Log Scale** | Off | Switch the Y axis to logarithmic scale |
-| **Show Grid Lines** | On | Toggle horizontal and vertical grid lines |
-| **X Label Rotation** | 0° | Degrees to rotate X axis labels |
+| **Trendline** | None | None, Linear, or Moving Average overlay per series |
+| **Moving Average Window** | 3 | Window size (2–20) for the moving average |
+| **Forecast Periods** | 0 | Project the linear trendline up to 12 periods past the data |
+| **Reference Line** | None | Fixed value, Mean, or Median dashed line |
+| **Fixed Value / Line Color** | _(blank)_ / `#666666` | Value and color for the reference line |
+| **Show Filters to Viewers** | Off | Filter bar for page visitors in view mode |
+| **Details on Demand** | Off | Clicking a chart element shows its underlying rows |
+| **Threshold Value / Direction / Color** | _(off)_ / Below / `#d13438` | Highlight values crossing a threshold |
+| **Auto-Refresh Interval** | 0 (off) | Reload network sources every N minutes |
+| **Cache API Results** | 0 (off) | Cache REST/Graph responses for N minutes per session |
+
+### Inline Advanced Options panel (advanced mode, while editing)
+
+| Setting | Description |
+|---|---|
+| **Color by Column** | Color scatter/bubble points by a category column |
+| **Tooltip Columns** | Extra columns appended to the hover tooltip |
+| **Drill Levels 1–3** | Column hierarchy for click-to-drill navigation |
+| **Bookmarks** | Save, apply, and delete named view states |
+
+---
+
+## Graph API Permissions
+
+> **This permission is optional.** It is only needed if you use the **Microsoft Graph** data source. The other four data sources (Upload File, SharePoint List, SharePoint File, REST API) and every chart feature work without it — you can safely deploy the package and leave the request unapproved.
+
+The solution requests the following Microsoft Graph permission (declared in `config/package-solution.json`):
+
+| Permission | Required | Enables |
+|---|---|---|
+| `User.Read` | Optional — only for the Microsoft Graph data source | Baseline sample scope; extend with the scopes your Graph endpoints need (e.g. `Reports.Read.All`, `Group.Read.All`) |
+
+To approve after deploying the package: **SharePoint Admin Center** → **Advanced** → **API access** → approve the pending request under *SharePoint Online Client Extensibility*. If you chart endpoints that need additional scopes, add them to `webApiPermissionRequests` in `config/package-solution.json` and redeploy. The other four data sources work without any Graph permissions.
 
 ---
 
 ## Sample Data
 
-The `sample-data/` folder contains ready-to-use files for testing all chart types:
+The `sample-data/` folder contains ready-to-use files for testing the chart types (several are also provided as `.xlsx`):
 
 | File | Best Chart Type | Columns |
 |---|---|---|
-| `monthly-sales.csv` | Bar, Line, Area | Month, Revenue, Units, Target, Profit |
-| `regional-sales.csv` | Horizontal Bar | Region, Revenue, Budget, Headcount |
-| `market-share.csv` | Pie, Doughnut | Product, MarketShare, Revenue, YoYGrowth |
+| `monthly-sales.csv` | Bar, Line, Area, Waterfall | Month, Revenue, Units, Target, Profit |
+| `regional-sales.csv` | Horizontal Bar, Treemap | Region, Revenue, Budget, Headcount |
+| `market-share.csv` | Pie, Doughnut, Treemap | Product, MarketShare, Revenue, YoYGrowth |
 | `scatter-rnd.csv` | Scatter | Company, RnDSpend, Revenue |
 | `bubble-companies.csv` | Bubble | Company, Revenue, Employees, GrowthRate |
 | `radar-products.csv` | Radar | Dimension, ProductA, ProductB, ProductC |
 | `sales-by-month.csv` | Bar, Line, Area | Month, Online Sales, Store Sales, Total |
-| `population-gdp.csv` | Scatter, Bubble | Country, GDP Per Capita, Life Expectancy, Population (M) |
+| `population-gdp.csv` | Scatter, Bubble, Histogram | Country, GDP Per Capita, Life Expectancy, Population (M) |
 | `product-ratings.csv` | Radar | Product, Performance, Reliability, Ease of Use, Value, Support, Features |
+| `study-hours-scores.csv` | Scatter, Histogram, Box Plot | Study Hours, Test Score, Confidence Level |
+| `temperature-trend.csv` | Line, Area | Month, High Temp (F), Low Temp (F), Avg Temp (F), Rainfall (in) |
 | `api-response-example.json` | Bar, Line | Quarter, Revenue, Expenses, Profit |
 
 To run a local REST API test server:
@@ -210,7 +299,7 @@ node sample-data/test-api-server.js
 smart-data-visualization/
 ├── config/
 │   ├── config.json               # Bundle entry points + localization
-│   ├── package-solution.json     # Solution ID, version, metadata
+│   ├── package-solution.json     # Solution ID, version, Graph permission requests
 │   └── serve.json                # Local dev server config
 ├── mockups/                      # Screenshot guide HTML
 ├── sample-data/                  # Test data files (not deployed)
@@ -218,17 +307,24 @@ smart-data-visualization/
 ├── src/
 │   └── webparts/
 │       └── smartDataVisualization/
-│           ├── SmartDataVisualizationWebPart.ts      # Web part class + property pane
+│           ├── SmartDataVisualizationWebPart.ts      # Web part class, property pane, Dynamic Data source
 │           ├── SmartDataVisualizationWebPart.manifest.json
 │           ├── components/
-│           │   ├── SmartDataVisualization.tsx        # Root component
-│           │   ├── DataSourcePanel.tsx               # Data loading UI
-│           │   ├── ColumnMapper.tsx                  # Column → axis mapping
-│           │   ├── ChartRenderer.tsx                 # Chart.js rendering
+│           │   ├── SmartDataVisualization.tsx        # Root component — pipeline, drill-down, bookmarks
+│           │   ├── DataSourcePanel.tsx               # Data loading UI (5 sources, sheet picker)
+│           │   ├── ColumnMapper.tsx                  # Column → axis mapping, per-series colors/types
+│           │   ├── DataControls.tsx                  # Sort, filter, limit, group-by aggregation
+│           │   ├── AdvancedOptions.tsx               # Color-by, tooltips, drill hierarchy, bookmarks
+│           │   ├── ChartRenderer.tsx                 # Chart.js rendering — all 15 chart types
 │           │   ├── DataTable.tsx                     # Tabular data view
+│           │   ├── ExportBar.tsx                     # PNG / JPEG / CSV / Excel export
 │           │   └── SmartDataVisualization.module.scss
+│           ├── services/
+│           │   └── dataLoaders.ts                    # Shared loaders: list, file, REST, Graph, cache
 │           ├── types/index.ts                        # Shared TypeScript types
 │           └── loc/                                  # Localization strings
+├── CHANGELOG.md
+├── USER-GUIDE.md
 ├── package.json
 └── tsconfig.json
 ```
@@ -240,18 +336,37 @@ smart-data-visualization/
 | Package | Purpose |
 |---|---|
 | `@microsoft/sp-webpart-base` | SPFx 1.20 web part base |
-| `chart.js` + `react-chartjs-2` | All chart rendering |
+| `@microsoft/sp-dynamic-data` | Publishes chart-click selections to connected web parts |
+| `chart.js` + `react-chartjs-2` | Core chart rendering |
+| `chartjs-plugin-datalabels` | On-chart value labels |
+| `chartjs-adapter-date-fns` + `date-fns` | Time-scale X axis |
+| `@sgratzl/chartjs-chart-boxplot` | Box Plot chart type |
+| `chartjs-chart-treemap` | Treemap chart type |
+| `chartjs-chart-matrix` | Heatmap chart type |
 | `papaparse` | CSV parsing |
-| `xlsx` 0.18.5 | Excel parsing (Apache 2.0 licensed) |
+| `xlsx` 0.20.3 | Excel parsing (official SheetJS build, Apache 2.0 — patched for CVE-2023-30533 / CVE-2024-22363) |
 | `@pnp/sp` | SharePoint list/file access via PnPjs v3 |
+
+---
+
+## Troubleshooting
+
+- **"Scatter and bubble charts need numeric values…"** — the mapped X or Y column contains no numbers. Pick a numeric column in the Column Mapping panel.
+- **Microsoft Graph source returns 401/403** — the Graph permission request has not been approved, or your endpoint needs a scope not listed in `package-solution.json`. See [Graph API Permissions](#graph-api-permissions).
+- **"This list has 5,000 or more items…"** — SharePoint returns at most 5,000 items per request. Filter the list with a view-backed approach or aggregate the data upstream.
+- **Arrows or accented characters look garbled in an exported CSV** — fixed in 2.0; exports now include a UTF-8 BOM. Re-export with the current version.
+- **Advanced settings disappeared** — the **Show Advanced Options** toggle (bottom of property pane page 1) is off. Configured behavior keeps working; only the configuration UI hides.
 
 ---
 
 ## Limitations
 
 - **Upload file data size:** Uploaded file data is serialized to the web part property bag. Datasets up to 200 KB persist across page reloads. Larger files display for the current session only — store them in a SharePoint document library and use the SharePoint File source for fully persistent large datasets.
+- **SharePoint list size:** A maximum of 5,000 items is loaded per list (SharePoint REST limit); a warning is shown when this cap is hit.
+- **Microsoft Graph:** Requires tenant-admin approval of Graph permissions; without approval the Graph source cannot load data.
 - **Direct database connections:** SPFx cannot connect directly to databases. Use a REST API (e.g., Azure Function or custom API) that queries your database and returns JSON.
 - **Cross-origin REST APIs:** The browser's same-origin policy applies. For external APIs, ensure CORS headers are configured on the server.
+- **Forecast:** Trendline forecasting extends category axes only (not the time axis).
 
 ---
 

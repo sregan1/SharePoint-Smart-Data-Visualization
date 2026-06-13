@@ -20,6 +20,9 @@ define([], function() {
     "XAxisPlaceholder": "e.g. Month",
     "YAxisLabelFieldLabel": "Y Axis Label",
     "YAxisPlaceholder": "e.g. Sales ($)",
+    // Chart type group headers
+    "ChartGroupStandard": "Standard Charts",
+    "ChartGroupSpecialized": "Specialized Charts",
     // Chart type options
     "ChartTypeBarLabel": "Bar Chart (Vertical)",
     "ChartTypeHorizontalBarLabel": "Bar Chart (Horizontal)",
@@ -39,6 +42,8 @@ define([], function() {
     "HistogramBinsFieldLabel": "Histogram Bins",
     "AppearancePageDescription": "Colors, labels, and axes",
     "AdvancedPageDescription": "Analytics, reference lines, interactivity, and data refresh",
+    "AdvancedToggleGroupName": "Advanced",
+    "ShowAdvancedOptionsFieldLabel": "Show Advanced Options",
     // Legend position options
     "LegendTopLabel": "Top",
     "LegendBottomLabel": "Bottom",
@@ -137,6 +142,7 @@ define([], function() {
     "ChartRenderErrorLabel": "Chart rendering error: {0}",
     "UnsupportedChartTypeLabel": "Unsupported chart type: {0}",
     "ChartAriaLabel": "Data visualization chart",
+    "ScatterNumericWarning": "Scatter and bubble charts need numeric values. The column \"{0}\" has no numeric data — choose a different column in the mapping above.",
     // Data source panel
     "DataSourceSectionHeader": "Data Source",
     "SourceUploadLabel": "Upload File",
@@ -145,7 +151,7 @@ define([], function() {
     "SourceRestApiLabel": "REST API",
     "SourceGraphApiLabel": "Microsoft Graph",
     "GraphPathLabel": "Graph API Path",
-    "GraphPathHelp": "Relative Microsoft Graph path, e.g. /me/memberOf or /reports/getTeamsUserActivityUserCounts(period='D7'). Graph permissions must be approved by an administrator.",
+    "GraphPathHelp": "Relative Microsoft Graph path, e.g. /me/memberOf or /reports/getTeamsUserActivityUserCounts(period='D7'). This source requires Graph permissions approved by an administrator — all other data sources work without them.",
     "SheetNameLabel": "Excel Sheet",
     "DelimiterLabel": "Delimiter",
     "DelimiterAutoDetect": "Auto-detect",
@@ -196,7 +202,8 @@ define([], function() {
     "YAxisColumnsLabel": "Y Axis Column(s)",
     "YAxisColumnsHelp": "(select one or more; click swatch to set color)",
     "SelectColumnPlaceholder": "— Select column —",
-    "SizeColumnLabel": "Size / Radius Column",
+    "ScatterLabelColumnLabel": "Point Label",
+    "SizeColumnLabel":"Size / Radius Column",
     "NoSizeColumnOption": "— None (fixed size) —",
     "SeriesColorTitle": "Color for {0}",
     "SeriesTypeTitle": "Chart type for {0}",

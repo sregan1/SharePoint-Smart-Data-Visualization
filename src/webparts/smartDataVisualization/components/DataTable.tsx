@@ -32,7 +32,7 @@ const DataTable: React.FC<IDataTableProps> = ({ data, columns }) => {
           </thead>
           <tbody>
             {pageData.map((row, i) => (
-              <tr key={i}>
+              <tr key={safePage * PAGE_SIZE + i}>
                 {columns.map(col => (
                   <td key={col} title={String(row[col] ?? '')}>
                     {String(row[col] ?? '')}

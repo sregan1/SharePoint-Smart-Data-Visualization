@@ -30,6 +30,7 @@ import {
   IChartRecord,
   IColumnConfig,
   isPieOrDoughnut,
+  isScatterOrBubble,
   hasNoXColumn,
   hasNoYColumn,
   needsRowColumn,
@@ -270,7 +271,9 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
       return out;
     });
     const csv = Papa.unparse(sanitized as object[]);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // UTF-8 BOM — without it Excel assumes ANSI and mangles non-ASCII
+    // characters (e.g. "→" renders as "â†'")
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     downloadUrl(url, 'data.csv');
     // Defer revocation — revoking synchronously can abort the download in some browsers
@@ -305,6 +308,22 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
 
   const validYColumns = yColumns.filter(Boolean);
   const colors = resolveColors(colorPalette, seriesColors, validYColumns.length || data.length);
+
+  // Scatter/bubble plot numeric coordinates; non-numeric points are dropped.
+  // If a mapped column has NO numeric values the chart would silently render
+  // blank — explain instead.
+  if (isScatterOrBubble(chartType)) {
+    const nonNumericColumn = [xColumn, validYColumns[0]]
+      .filter(Boolean)
+      .find(col => !data.some(row => numOrNull(row[col]) !== null));
+    if (nonNumericColumn) {
+      return (
+        <div className={styles.noDataMessage}>
+          {fmt(strings.ScatterNumericWarning, nonNumericColumn)}
+        </div>
+      );
+    }
+  }
 
   // KPI tile — a single aggregated number, no canvas involved
   if (chartType === 'kpi') {
@@ -592,6 +611,11 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   };
 
   const buildScatterData = () => {
+    const mkPoint = (row: IChartRecord, yCol: string) => ({
+      x: numOrNull(row[xColumn]),
+      y: numOrNull(row[yCol]),
+      label: labelColumn ? String(row[labelColumn] ?? '') : undefined,
+    });
     // Spotfire-style "color by": partition points into one dataset per category
     if (colorByColumn && validYColumns.length) {
       const categories: string[] = [];
@@ -605,8 +629,8 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
           label: cat,
           data: data
             .filter(row => String(row[colorByColumn] ?? '') === cat)
-            .map(row => ({ x: numOrNull(row[xColumn]), y: numOrNull(row[validYColumns[0]]) }))
-            .filter((p): p is { x: number; y: number } => p.x !== null && p.y !== null),
+            .map(row => mkPoint(row, validYColumns[0]))
+            .filter((p): p is typeof p & { x: number; y: number } => p.x !== null && p.y !== null),
           backgroundColor: `${catColors[i]}80`,
           borderColor: catColors[i],
         })),
@@ -618,8 +642,8 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         return {
           label: col,
           data: data
-            .map(row => ({ x: numOrNull(row[xColumn]), y: numOrNull(row[col]) }))
-            .filter((p): p is { x: number; y: number } => p.x !== null && p.y !== null),
+            .map(row => mkPoint(row, col))
+            .filter((p): p is typeof p & { x: number; y: number } => p.x !== null && p.y !== null),
           backgroundColor: `${color}80`,
           borderColor: color,
         };
@@ -633,8 +657,9 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         x: numOrNull(row[xColumn]),
         y: numOrNull(row[validYColumns[0]]),
         r: sizeColumn ? Math.max(3, Math.sqrt(Math.abs(numOrNull(row[sizeColumn]) ?? 0)) * 3) : 8,
+        label: labelColumn ? String(row[labelColumn] ?? '') : undefined,
       }))
-      .filter((p): p is { x: number; y: number; r: number } => p.x !== null && p.y !== null);
+      .filter((p): p is typeof p & { x: number; y: number; r: number } => p.x !== null && p.y !== null);
 
     if (colorByColumn) {
       const categories: string[] = [];
@@ -910,6 +935,14 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     },
   }) : undefined;
 
+  const scatterLabelCallbacks = labelColumn ? {
+    ...tooltipCallbacks,
+    title: (items: Array<{ raw: any }>) => {
+      const lbl = items[0]?.raw?.label;
+      return lbl != null ? String(lbl) : '';
+    },
+  } : tooltipCallbacks;
+
   const scatterOptions: any = {
     ...baseOptions,
     scales: {
@@ -930,7 +963,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     },
     plugins: {
       ...baseOptions.plugins,
-      tooltip: { mode: 'point', intersect: true, callbacks: tooltipCallbacks },
+      tooltip: { mode: 'point', intersect: true, callbacks: scatterLabelCallbacks },
     },
   };
 

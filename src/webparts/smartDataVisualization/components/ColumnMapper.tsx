@@ -15,10 +15,12 @@ import styles from './SmartDataVisualization.module.scss';
 
 interface IColumnMapperProps {
   columns: string[];
+  numericColumns?: string[];
   config: IColumnConfig;
   chartType: ChartType;
   seriesColors: string;
   seriesTypes: string;
+  showAdvanced: boolean;
   onChange: (config: Partial<IColumnConfig>) => void;
   onSeriesColorsChange: (colors: string) => void;
   onSeriesTypesChange: (types: string) => void;
@@ -26,10 +28,12 @@ interface IColumnMapperProps {
 
 const ColumnMapper: React.FC<IColumnMapperProps> = ({
   columns,
+  numericColumns,
   config,
   chartType,
   seriesColors,
   seriesTypes,
+  showAdvanced,
   onChange,
   onSeriesColorsChange,
   onSeriesTypesChange,
@@ -43,8 +47,9 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
 
   const colorOverrides = seriesColors ? seriesColors.split(',') : [];
   const typeOverrides = seriesTypes ? seriesTypes.split(',') : [];
-  // Per-series type only makes sense for cartesian multi-series charts
-  const supportsComboTypes = chartType === 'bar' || chartType === 'line' || chartType === 'area';
+  // Per-series type only makes sense for cartesian multi-series charts (advanced mode only)
+  const supportsComboTypes = showAdvanced &&
+    (chartType === 'bar' || chartType === 'line' || chartType === 'area');
 
   const getSeriesColor = (yColIndex: number): string => {
     const c = colorOverrides[yColIndex] ? colorOverrides[yColIndex].trim() : '';
@@ -107,6 +112,22 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
               onChange={e => onChange({ xColumn: e.target.value })}
             >
               <option value="">{strings.SelectColumnPlaceholder}</option>
+              {(isScatterBubble && numericColumns ? numericColumns : columns).map(col => (
+                <option key={col} value={col}>{col}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {isScatterBubble && (
+          <div className={styles.fieldGroup}>
+            <label htmlFor={`${idPrefix}-label`}>{strings.ScatterLabelColumnLabel}</label>
+            <select
+              id={`${idPrefix}-label`}
+              value={config.labelColumn}
+              onChange={e => onChange({ labelColumn: e.target.value })}
+            >
+              <option value="">{strings.NoSizeColumnOption}</option>
               {columns.map(col => (
                 <option key={col} value={col}>{col}</option>
               ))}
@@ -139,7 +160,7 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
               onChange={e => onChange({ yColumns: [e.target.value] })}
             >
               <option value="">{strings.SelectColumnPlaceholder}</option>
-              {columns.map(col => (
+              {(isScatterBubble && numericColumns ? numericColumns : columns).map(col => (
                 <option key={col} value={col}>{col}</option>
               ))}
             </select>

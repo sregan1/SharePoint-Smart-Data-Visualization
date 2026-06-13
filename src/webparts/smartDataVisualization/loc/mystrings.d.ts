@@ -19,6 +19,9 @@ declare interface ISmartDataVisualizationWebPartStrings {
   XAxisPlaceholder: string;
   YAxisLabelFieldLabel: string;
   YAxisPlaceholder: string;
+  // Chart type group headers
+  ChartGroupStandard: string;
+  ChartGroupSpecialized: string;
   // Chart type options
   ChartTypeBarLabel: string;
   ChartTypeHorizontalBarLabel: string;
@@ -38,6 +41,8 @@ declare interface ISmartDataVisualizationWebPartStrings {
   HistogramBinsFieldLabel: string;
   AppearancePageDescription: string;
   AdvancedPageDescription: string;
+  AdvancedToggleGroupName: string;
+  ShowAdvancedOptionsFieldLabel: string;
   // Legend position options
   LegendTopLabel: string;
   LegendBottomLabel: string;
@@ -136,6 +141,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   ChartRenderErrorLabel: string;
   UnsupportedChartTypeLabel: string;
   ChartAriaLabel: string;
+  ScatterNumericWarning: string;
   // Data source panel
   DataSourceSectionHeader: string;
   SourceUploadLabel: string;
@@ -197,6 +203,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   SelectColumnPlaceholder: string;
   SizeColumnLabel: string;
   NoSizeColumnOption: string;
+  ScatterLabelColumnLabel: string;
   SeriesColorTitle: string;
   SeriesTypeTitle: string;
   SeriesTypeDefault: string;

@@ -11,6 +11,7 @@ interface IDataControlsProps {
   filterValue: string;
   groupByColumn: string;
   aggregation: string;
+  showAdvanced: boolean;
   onChange: (partial: {
     sortColumn?: string;
     sortDirection?: string;
@@ -40,6 +41,7 @@ const DataControls: React.FC<IDataControlsProps> = ({
   filterValue,
   groupByColumn,
   aggregation,
+  showAdvanced,
   onChange,
 }) => {
   // Unique id prefix so label/input pairing stays valid with multiple instances on a page
@@ -83,6 +85,7 @@ const DataControls: React.FC<IDataControlsProps> = ({
           />
         </div>
       </div>
+      {showAdvanced && (
       <div className={styles.fieldRow}>
         <div className={styles.fieldGroup}>
           <label htmlFor={`${idPrefix}-groupby`}>{strings.GroupByLabel}</label>
@@ -110,6 +113,7 @@ const DataControls: React.FC<IDataControlsProps> = ({
           <span className={styles.helpText}>{strings.GroupByHelp}</span>
         </div>
       </div>
+      )}
       <div className={styles.fieldRow}>
         <div className={styles.fieldGroup}>
           <label htmlFor={`${idPrefix}-filtercol`}>{strings.FilterColumnLabel}</label>

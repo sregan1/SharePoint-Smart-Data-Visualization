@@ -91,6 +91,8 @@ export interface ISmartDataVisualizationWebPartProps {
   colorByColumn: string;
   tooltipColumns: string;
   bookmarks: string;
+  // UI mode: false = simple editing experience (default), true = all options
+  showAdvancedOptions: boolean;
 }
 
 export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWebPartProps {

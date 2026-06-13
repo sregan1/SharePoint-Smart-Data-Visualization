@@ -4,6 +4,102 @@ All notable changes to Smart Data Visualization are documented here.
 
 ---
 
+## [1.1.0] — 2026-06-13
+
+### Added — Chart Types
+
+- **6 new chart types** (15 total): KPI Tile, Histogram, Waterfall, Box Plot, Treemap, Heatmap
+- **KPI Tile**: a single aggregated number (sum / average / count / min / max) with threshold-based coloring — no canvas, ideal for dashboard headlines
+- **Histogram**: automatic numeric binning with a configurable bin count (4–50)
+- **Waterfall**: cumulative floating bars with automatic positive/negative coloring
+- **Box Plot**: value distribution per category (via `@sgratzl/chartjs-chart-boxplot`)
+- **Treemap**: proportional area tiles grouped by category (via `chartjs-chart-treemap`)
+- **Heatmap**: column × row category matrix with value-scaled color intensity (via `chartjs-chart-matrix`)
+- **Combo charts**: per-series Bar/Line type override on Bar, Line, and Area charts
+- **Point Label field** for Scatter and Bubble charts: a text column (e.g. Company, Country) used as the tooltip title for each point; X/Y dropdowns now restrict to numeric columns only
+
+### Added — Data Sources
+
+- **Microsoft Graph source**: chart any Graph endpoint (e.g. `/me/memberOf`) via the SPFx Graph client; requires admin-approved permissions
+- **Excel sheet picker**: multi-sheet workbooks show a sheet dropdown for uploads and SharePoint file URLs; the selection persists
+- **Result caching**: optional sessionStorage cache (with TTL) for REST and Graph responses
+- **Auto-refresh**: reload network sources on a configurable interval (view mode dashboards)
+- **Manual refresh button** in view mode for network sources (bypasses the cache)
+- **List truncation warning** when a SharePoint list returns the 5,000-item maximum
+
+### Added — Data Shaping & Analytics
+
+- **Group-by aggregation**: Sum / Average / Count / Min / Max per category, applied before sorting and limits
+- **Sort, filter, and row-limit controls** in the inline editor
+- **Trendlines**: linear regression or moving average (configurable window) overlay per series
+- **Forecast**: project the linear trendline up to 12 periods past the data
+- **Reference lines**: fixed value, mean, or median drawn as a dashed line
+- **Date/time X axis**: auto-detected (or forced) Chart.js time scale for date-valued X columns
+- **Conditional formatting**: highlight bars/points above or below a threshold in a custom color
+
+### Added — Interactivity
+
+- **Viewer filter bar**: opt-in column + contains filter for page viewers (per-visit, never saved)
+- **Details on demand**: click a chart element to see the underlying rows in a table
+- **Drill-down hierarchies**: define up to 3 levels (e.g. Region → Country → City); click to drill, breadcrumbs to navigate back
+- **Bookmarks**: save named view states (filters, sorting, grouping, column mapping); viewers get an apply-only picker
+- **SPFx Dynamic Data source**: chart clicks publish *Selected category / value / series* so connected web parts can react
+- **Custom tooltip columns**: append chosen columns from the hovered row to the tooltip
+- **Color by category**: color scatter/bubble points by a column instead of by series
+
+### Added — UI & Editing Experience
+
+- **Grouped chart type dropdown**: all 15 chart types are always available, organized into Standard Charts and Specialized Charts groups — no longer gated behind Advanced Options
+- **3-page property pane** in advanced mode (Chart / Appearance / Advanced) with accordion groups
+- **Analytics and Reference Line accordion groups** are automatically hidden for chart types that don't support them (Pie, Doughnut, Treemap, Heatmap, KPI)
+- **Advanced Options inline panel** (collapsed by default) for color-by, tooltip columns, drill hierarchy, and bookmarks
+- **Dark theme support**: chart text, grid lines, legends, and data labels adapt to section background
+- **Full localization**: all UI strings moved to localized resources
+- **Accessibility**: chart `role="img"` with descriptive labels, label/input pairing on all fields, screen-reader-safe icons, alert roles on errors
+
+### Changed
+
+- Property pane reorganized into logical pages and groups
+- Columns are now discovered across the first 50 rows (previously row 1 only), so columns missing from early rows still appear
+- SharePoint lookup/person columns (object values) are excluded from the column mapper instead of rendering as `[object Object]`
+- Missing or non-numeric values render as gaps in line/area/bar charts instead of being coerced to 0
+- Data loading logic consolidated into a shared `services/dataLoaders.ts` module
+- Excel parsing migrated from the deprecated `readAsBinaryString` API to `ArrayBuffer`
+- Y axis min/max property pane fields now validate numeric input
+- Manifest `preconfiguredEntries` now declares every property with its default
+- Delimiter dropdown is now hidden unless a CSV/TSV/TXT file is loaded (was always shown for upload/SharePoint File sources)
+- Column auto-selection on file load now picks a numeric default for the X axis on Scatter, Bubble, and Histogram charts; on Scatter/Bubble, Y defaults to a second distinct numeric column
+
+### Fixed
+
+- Thousands separator corrupted decimal values at 4 decimal places (e.g. `1,234.5,678`)
+- PNG/JPEG export buttons stayed disabled in view mode
+- Bubble chart Size column and pie Label column were lost on page reload
+- Data table could strand the user on an empty page after filtering
+- Wrong `$schema` URL in the web part manifest
+- Stale network responses could overwrite newer data (request cancellation added)
+- Scatter and bubble charts rendered blank when a mapped column had no numeric values — now shows a clear message naming the column
+- CSV export mangled non-ASCII characters in Excel (e.g. `→` became `â†'`) — exports now include a UTF-8 BOM
+- Object URL revocation no longer races the CSV download
+- Uploading a file with different columns than the previously loaded file showed "select column mappings" instead of auto-selecting appropriate defaults
+- Property pane disabled states for Stacked, Legend Position, and Histogram Bins were not updating when chart type changed
+- Switching chart type to Scatter, Bubble, or Histogram after data was already loaded left a non-numeric X column in place, immediately showing the "needs numeric values" error — the X axis is now auto-corrected to the first numeric column on chart type change
+- Applying a saved bookmark after switching to a different dataset silently set invalid column names in the column config; bookmark columns are now validated against the current dataset before applying
+- `detailCategory` (the open Details on Demand panel) was not cleared when the drill-down column configuration changed, leaving a stale detail panel pointing at the wrong column
+- Data table row keys reset to 0 on every page, causing React to reuse DOM nodes incorrectly across page changes
+
+### Security
+
+- **xlsx upgraded 0.18.5 → 0.20.3** (official SheetJS distribution, still Apache 2.0) — resolves CVE-2023-30533 (prototype pollution) and CVE-2024-22363 (ReDoS)
+- **CSV export formula-injection protection**: values starting with `=`, `+`, `-`, `@`, tab, or CR are prefix-escaped per OWASP guidance
+
+### Technical
+
+- New dependencies: `chartjs-adapter-date-fns` + `date-fns` (time axis), `@sgratzl/chartjs-chart-boxplot`, `chartjs-chart-treemap`, `chartjs-chart-matrix` (new chart types), `@microsoft/sp-dynamic-data` (Dynamic Data)
+- `package-solution.json` now requests the Microsoft Graph `User.Read` permission — **optional**, only needed for the Microsoft Graph data source; all other sources and features work without approving it (extend the scopes per your Graph endpoints)
+
+---
+
 ## [1.0.0] — 2026-06-07
 
 ### Added

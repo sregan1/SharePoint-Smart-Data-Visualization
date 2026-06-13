@@ -58,6 +58,17 @@ const FRAME_FILENAMES = [
   'datasource-sharepoint-list.png', // Feature — SharePoint List
   'settings-chart-settings.png',    // Settings — Property Pane: Chart Settings
   'settings-data-labels.png',       // Settings — Property Pane: Data Labels & Axes
+  'chart-kpi.png',                  // Chart 10 — KPI Tile (v2.0)
+  'chart-histogram.png',            // Chart 11 — Histogram (v2.0)
+  'chart-waterfall.png',            // Chart 12 — Waterfall (v2.0)
+  'chart-boxplot.png',              // Chart 13 — Box Plot (v2.0)
+  'chart-treemap.png',              // Chart 14 — Treemap (v2.0)
+  'chart-heatmap.png',              // Chart 15 — Heatmap (v2.0)
+  'feature-drilldown.png',          // Feature — Drill-Down breadcrumbs (v2.0)
+  'feature-viewer-filters.png',     // Feature — Viewer Filter Bar (v2.0)
+  'feature-details-on-demand.png',  // Feature — Details on Demand (v2.0)
+  'feature-advanced-options.png',   // Feature — Advanced Options panel (v2.0)
+  'settings-advanced.png',          // Settings — Property Pane: Advanced page (v2.0)
 ];
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -88,7 +99,7 @@ const FRAME_FILENAMES = [
     // Hide page chrome (sticky nav, TOC) — they're mockup scaffolding, not web part UI.
     // Without this, the sticky header lands in the middle of tall element screenshots.
     await page.addStyleTag({
-      content: '.page-header, .toc { display: none !important; }',
+      content: '.page-header, .toc, .screenshot-label { display: none !important; }',
     });
     await wait(100);
 

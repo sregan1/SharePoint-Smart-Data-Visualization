@@ -79,7 +79,8 @@
         "drillDownColumns": "",
         "colorByColumn": "",
         "tooltipColumns": "",
-        "bookmarks": ""
+        "bookmarks": "",
+        "showAdvancedOptions": false
       }
     }
   ]

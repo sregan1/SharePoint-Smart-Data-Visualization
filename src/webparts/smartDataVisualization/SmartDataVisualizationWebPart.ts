@@ -3,10 +3,13 @@ import * as ReactDom from 'react-dom';
 import { Version, DisplayMode } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
+  IPropertyPaneDropdownOption,
   PropertyPaneTextField,
   PropertyPaneDropdown,
   PropertyPaneToggle,
   PropertyPaneSlider,
+  PropertyPaneLabel,
+  PropertyPaneDropdownOptionType,
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
@@ -142,6 +145,8 @@ export default class SmartDataVisualizationWebPart
         colorByColumn: p.colorByColumn || '',
         tooltipColumns: p.tooltipColumns || '',
         bookmarks: p.bookmarks || '',
+        // UI mode
+        showAdvancedOptions: p.showAdvancedOptions || false,
         // Framework
         context: this.context,
         isDarkTheme: this._isDarkTheme,
@@ -186,23 +191,42 @@ export default class SmartDataVisualizationWebPart
     return isNaN(Number(value)) ? strings.NumericValidationError : '';
   }
 
+  // Fields whose value drives the visibility or disabled state of other pane
+  // fields — the pane must rebuild for those states to update live.
+  private static readonly PANE_STRUCTURE_FIELDS = [
+    'showAdvancedOptions', 'chartType', 'showLegend', 'trendline', 'referenceLineType',
+  ];
+
+  protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: unknown, newValue: unknown): void {
+    super.onPropertyPaneFieldChanged(propertyPath, oldValue, newValue);
+    if (SmartDataVisualizationWebPart.PANE_STRUCTURE_FIELDS.indexOf(propertyPath) >= 0) {
+      this.context.propertyPane.refresh();
+    }
+  }
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    const chartTypes: { key: ChartType; text: string }[] = [
-      { key: 'bar', text: strings.ChartTypeBarLabel },
+    const advanced = !!this.properties.showAdvancedOptions;
+    const currentType = this.properties.chartType || 'bar';
+
+    const chartTypes: IPropertyPaneDropdownOption[] = [
+      { key: 'header-standard', text: strings.ChartGroupStandard, type: PropertyPaneDropdownOptionType.Header },
+      { key: 'bar',           text: strings.ChartTypeBarLabel },
       { key: 'horizontalBar', text: strings.ChartTypeHorizontalBarLabel },
-      { key: 'line', text: strings.ChartTypeLineLabel },
-      { key: 'area', text: strings.ChartTypeAreaLabel },
-      { key: 'scatter', text: strings.ChartTypeScatterLabel },
-      { key: 'pie', text: strings.ChartTypePieLabel },
-      { key: 'doughnut', text: strings.ChartTypeDoughnutLabel },
-      { key: 'bubble', text: strings.ChartTypeBubbleLabel },
-      { key: 'radar', text: strings.ChartTypeRadarLabel },
-      { key: 'kpi', text: strings.ChartTypeKpiLabel },
-      { key: 'histogram', text: strings.ChartTypeHistogramLabel },
-      { key: 'waterfall', text: strings.ChartTypeWaterfallLabel },
-      { key: 'boxplot', text: strings.ChartTypeBoxplotLabel },
-      { key: 'treemap', text: strings.ChartTypeTreemapLabel },
-      { key: 'heatmap', text: strings.ChartTypeHeatmapLabel },
+      { key: 'line',          text: strings.ChartTypeLineLabel },
+      { key: 'area',          text: strings.ChartTypeAreaLabel },
+      { key: 'pie',           text: strings.ChartTypePieLabel },
+      { key: 'doughnut',      text: strings.ChartTypeDoughnutLabel },
+      { key: 'scatter',       text: strings.ChartTypeScatterLabel },
+      { key: 'bubble',        text: strings.ChartTypeBubbleLabel },
+      { key: 'radar',         text: strings.ChartTypeRadarLabel },
+      { key: 'divider-1',     text: '-', type: PropertyPaneDropdownOptionType.Divider },
+      { key: 'header-special', text: strings.ChartGroupSpecialized, type: PropertyPaneDropdownOptionType.Header },
+      { key: 'kpi',           text: strings.ChartTypeKpiLabel },
+      { key: 'histogram',     text: strings.ChartTypeHistogramLabel },
+      { key: 'waterfall',     text: strings.ChartTypeWaterfallLabel },
+      { key: 'boxplot',       text: strings.ChartTypeBoxplotLabel },
+      { key: 'treemap',       text: strings.ChartTypeTreemapLabel },
+      { key: 'heatmap',       text: strings.ChartTypeHeatmapLabel },
     ];
 
     const legendPositions = [
@@ -222,97 +246,125 @@ export default class SmartDataVisualizationWebPart
       { key: 'cool', text: strings.PaletteCoolLabel },
     ];
 
+    const headerGroup = {
+      groupName: strings.HeaderGroupName,
+      groupFields: [
+        PropertyPaneToggle('showWebPartHeader', {
+          label: strings.ShowWebPartHeaderFieldLabel,
+          checked: this.properties.showWebPartHeader !== false,
+        }),
+        PropertyPaneTextField('webPartHeader', {
+          label: strings.WebPartHeaderFieldLabel,
+          placeholder: strings.WebPartHeaderPlaceholder,
+        }),
+      ],
+    };
+
+    const chartSettingsGroup = {
+      groupName: strings.ChartSettingsGroupName,
+      groupFields: [
+        PropertyPaneTextField('chartTitle', {
+          label: strings.ChartTitleFieldLabel,
+        }),
+        PropertyPaneDropdown('chartType', {
+          label: strings.ChartTypeFieldLabel,
+          options: chartTypes,
+          selectedKey: currentType,
+        }),
+        PropertyPaneDropdown('legendPosition', {
+          label: strings.LegendPositionFieldLabel,
+          options: legendPositions,
+          selectedKey: this.properties.legendPosition || 'bottom',
+          disabled: this.properties.showLegend === false,
+        }),
+        PropertyPaneSlider('chartHeight', {
+          label: strings.ChartHeightFieldLabel,
+          min: 150,
+          max: 1200,
+          step: 50,
+          value: this.properties.chartHeight || 400,
+        }),
+        PropertyPaneToggle('showLegend', {
+          label: strings.ShowLegendFieldLabel,
+          checked: this.properties.showLegend !== false,
+        }),
+        PropertyPaneToggle('stacked', {
+          label: strings.StackedFieldLabel,
+          checked: this.properties.stacked || false,
+          disabled: ['bar', 'horizontalBar', 'line', 'area'].indexOf(currentType) < 0,
+        }),
+        PropertyPaneToggle('showDataTable', {
+          label: strings.ShowDataTableFieldLabel,
+          checked: this.properties.showDataTable || false,
+        }),
+        PropertyPaneToggle('showExportBar', {
+          label: strings.ShowExportBarFieldLabel,
+          checked: this.properties.showExportBar !== false,
+        }),
+        PropertyPaneTextField('xAxisLabel', {
+          label: strings.XAxisLabelFieldLabel,
+          placeholder: strings.XAxisPlaceholder,
+        }),
+        PropertyPaneTextField('yAxisLabel', {
+          label: strings.YAxisLabelFieldLabel,
+          placeholder: strings.YAxisPlaceholder,
+        }),
+        ...(currentType === 'histogram' ? [
+          PropertyPaneSlider('histogramBins', {
+            label: strings.HistogramBinsFieldLabel,
+            min: 4,
+            max: 50,
+            step: 1,
+            value: this.properties.histogramBins || 10,
+          }),
+        ] : []),
+      ],
+    };
+
+    const colorsGroup = {
+      groupName: strings.ColorsGroupName,
+      groupFields: [
+        PropertyPaneDropdown('colorPalette', {
+          label: strings.ColorPaletteFieldLabel,
+          options: colorPalettes,
+          selectedKey: this.properties.colorPalette || 'office',
+        }),
+      ],
+    };
+
+    const advancedToggleGroup = {
+      groupName: strings.AdvancedToggleGroupName,
+      groupFields: [
+        PropertyPaneToggle('showAdvancedOptions', {
+          label: strings.ShowAdvancedOptionsFieldLabel,
+          checked: advanced,
+        }),
+      ],
+    };
+
+    // Simple mode (the default): one page with just the essentials
+    if (!advanced) {
+      return {
+        pages: [
+          {
+            header: { description: strings.PropertyPaneDescription },
+            groups: [headerGroup, chartSettingsGroup, colorsGroup, advancedToggleGroup],
+          },
+        ],
+      };
+    }
+
     return {
       pages: [
         {
           header: { description: strings.PropertyPaneDescription },
-          groups: [
-            {
-              groupName: strings.HeaderGroupName,
-              groupFields: [
-                PropertyPaneToggle('showWebPartHeader', {
-                  label: strings.ShowWebPartHeaderFieldLabel,
-                  checked: this.properties.showWebPartHeader !== false,
-                }),
-                PropertyPaneTextField('webPartHeader', {
-                  label: strings.WebPartHeaderFieldLabel,
-                  placeholder: strings.WebPartHeaderPlaceholder,
-                }),
-              ],
-            },
-            {
-              groupName: strings.ChartSettingsGroupName,
-              groupFields: [
-                PropertyPaneTextField('chartTitle', {
-                  label: strings.ChartTitleFieldLabel,
-                }),
-                PropertyPaneDropdown('chartType', {
-                  label: strings.ChartTypeFieldLabel,
-                  options: chartTypes,
-                  selectedKey: this.properties.chartType || 'bar',
-                }),
-                PropertyPaneDropdown('legendPosition', {
-                  label: strings.LegendPositionFieldLabel,
-                  options: legendPositions,
-                  selectedKey: this.properties.legendPosition || 'bottom',
-                }),
-                PropertyPaneSlider('chartHeight', {
-                  label: strings.ChartHeightFieldLabel,
-                  min: 150,
-                  max: 1200,
-                  step: 50,
-                  value: this.properties.chartHeight || 400,
-                }),
-                PropertyPaneToggle('showLegend', {
-                  label: strings.ShowLegendFieldLabel,
-                  checked: this.properties.showLegend !== false,
-                }),
-                PropertyPaneToggle('stacked', {
-                  label: strings.StackedFieldLabel,
-                  checked: this.properties.stacked || false,
-                }),
-                PropertyPaneToggle('showDataTable', {
-                  label: strings.ShowDataTableFieldLabel,
-                  checked: this.properties.showDataTable || false,
-                }),
-                PropertyPaneToggle('showExportBar', {
-                  label: strings.ShowExportBarFieldLabel,
-                  checked: this.properties.showExportBar !== false,
-                }),
-                PropertyPaneTextField('xAxisLabel', {
-                  label: strings.XAxisLabelFieldLabel,
-                  placeholder: strings.XAxisPlaceholder,
-                }),
-                PropertyPaneTextField('yAxisLabel', {
-                  label: strings.YAxisLabelFieldLabel,
-                  placeholder: strings.YAxisPlaceholder,
-                }),
-                PropertyPaneSlider('histogramBins', {
-                  label: strings.HistogramBinsFieldLabel,
-                  min: 4,
-                  max: 50,
-                  step: 1,
-                  value: this.properties.histogramBins || 10,
-                  disabled: this.properties.chartType !== 'histogram',
-                }),
-              ],
-            },
-          ],
+          groups: [headerGroup, chartSettingsGroup, advancedToggleGroup],
         },
         {
           header: { description: strings.AppearancePageDescription },
           displayGroupsAsAccordion: true,
           groups: [
-            {
-              groupName: strings.ColorsGroupName,
-              groupFields: [
-                PropertyPaneDropdown('colorPalette', {
-                  label: strings.ColorPaletteFieldLabel,
-                  options: colorPalettes,
-                  selectedKey: this.properties.colorPalette || 'office',
-                }),
-              ],
-            },
+            colorsGroup,
             {
               groupName: strings.DataLabelsGroupName,
               groupFields: [
@@ -386,6 +438,7 @@ export default class SmartDataVisualizationWebPart
           header: { description: strings.AdvancedPageDescription },
           displayGroupsAsAccordion: true,
           groups: [
+            ...(['pie', 'doughnut', 'treemap', 'heatmap', 'kpi'].indexOf(currentType) < 0 ? [
             {
               groupName: strings.AnalyticsGroupName,
               groupFields: [
@@ -441,6 +494,7 @@ export default class SmartDataVisualizationWebPart
                 }),
               ],
             },
+            ] : []),
             {
               groupName: strings.InteractivityGroupName,
               groupFields: [

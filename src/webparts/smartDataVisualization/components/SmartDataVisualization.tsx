@@ -98,21 +98,36 @@ const aggregateRows = (rows: IChartRecord[], groupBy: string, agg: string): ICha
   });
 };
 
+const isNumericCol = (col: string, data: IChartRecord[]): boolean =>
+  data.some(row => { const v = row[col]; return v !== null && v !== undefined && v !== '' && !isNaN(Number(v)); });
+
+const NUMERIC_X_TYPES = ['scatter', 'bubble', 'histogram'];
+
 const buildColumnConfig = (
   columns: string[],
   data: IChartRecord[],
   xColumn: string,
   yColumns: string,
   labelColumn: string,
-  sizeColumn: string
+  sizeColumn: string,
+  chartType: string
 ): IColumnConfig => {
-  const yCols = yColumns ? yColumns.split(',').filter(Boolean) : [];
-  const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
+  const hasCol = (c: string) => !!c && columns.includes(c);
+  const yCols = (yColumns ? yColumns.split(',').filter(Boolean) : []).filter(hasCol);
+  const numericCols = columns.filter(col => isNumericCol(col, data));
+  const needsNumericX = NUMERIC_X_TYPES.indexOf(chartType) >= 0;
+  const defaultX = needsNumericX
+    ? (numericCols[0] || columns[0] || '')
+    : (columns[0] || '');
+  // For scatter/bubble, prefer a different numeric column for Y than X
+  const defaultY = needsNumericX && numericCols.length >= 2
+    ? [numericCols[1]]
+    : numericCols[0] ? [numericCols[0]] : (columns[1] ? [columns[1]] : []);
   return {
-    xColumn: xColumn || columns[0] || '',
-    yColumns: yCols.length ? yCols : firstNumeric ? [firstNumeric] : (columns[1] ? [columns[1]] : []),
-    labelColumn: labelColumn || '',
-    sizeColumn: sizeColumn || '',
+    xColumn: hasCol(xColumn) ? xColumn : defaultX,
+    yColumns: yCols.length ? yCols : defaultY,
+    labelColumn: hasCol(labelColumn) ? labelColumn : '',
+    sizeColumn: hasCol(sizeColumn) ? sizeColumn : '',
   };
 };
 
@@ -165,7 +180,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     }
 
     const columnConfig = buildColumnConfig(
-      columns, data, props.xColumn, props.yColumns, props.labelColumn, props.sizeColumn
+      columns, data, props.xColumn, props.yColumns, props.labelColumn, props.sizeColumn,
+      props.chartType || 'bar'
     );
 
     return {
@@ -271,6 +287,26 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
+  // When the chart type changes to one that requires a numeric X axis and the
+  // current X column is non-numeric, auto-select the first numeric column so
+  // the chart renders immediately without requiring a manual mapper change.
+  React.useEffect(() => {
+    if (!state.data.length) return;
+    if (NUMERIC_X_TYPES.indexOf(chartType) < 0) return;
+    const currentX = columnConfigRef.current.xColumn;
+    if (currentX && isNumericCol(currentX, state.data)) return;
+    const numericCols = state.columns.filter(col => isNumericCol(col, state.data));
+    if (!numericCols.length) return;
+    const newX = numericCols[0];
+    const currentY = columnConfigRef.current.yColumns.filter(c => isNumericCol(c, state.data));
+    const newY = currentY.length ? currentY : numericCols.length >= 2 ? [numericCols[1]] : [numericCols[0]];
+    const newConfig: IColumnConfig = { ...columnConfigRef.current, xColumn: newX, yColumns: newY };
+    columnConfigRef.current = newConfig;
+    onPropertiesUpdate({ xColumn: newX, yColumns: newY.join(',') });
+    setState(prev => ({ ...prev, columnConfig: newConfig }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartType]);
+
   // Auto-refresh for network sources (view-mode dashboards)
   React.useEffect(() => {
     const srcType = props.dataSourceType || 'upload';
@@ -281,15 +317,23 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   }, [props.refreshIntervalMinutes, props.dataSourceType]);
 
   const handleDataLoaded = (data: IChartRecord[], columns: string[]) => {
-    const firstNumeric = columns.find(col => data.some(row => typeof row[col] === 'number'));
+    const hasCol = (c: string) => !!c && columns.includes(c);
+    const numericCols = columns.filter(col => isNumericCol(col, data));
+    const needsNumericX = NUMERIC_X_TYPES.indexOf(chartType) >= 0;
     const prevConfig = columnConfigRef.current;
+    const validPrevY = (prevConfig.yColumns || []).filter(hasCol);
+    const defaultX = needsNumericX
+      ? (numericCols[0] || columns[0] || '')
+      : (columns[0] || '');
+    const defaultY = needsNumericX && numericCols.length >= 2
+      ? [numericCols[1]]
+      : numericCols[0] ? [numericCols[0]] : (columns[1] ? [columns[1]] : []);
+    const prevXValid = hasCol(prevConfig.xColumn) && (!needsNumericX || numericCols.includes(prevConfig.xColumn));
     const newColumnConfig: IColumnConfig = {
-      xColumn: prevConfig.xColumn || columns[0] || '',
-      yColumns: prevConfig.yColumns.length
-        ? prevConfig.yColumns
-        : firstNumeric ? [firstNumeric] : (columns[1] ? [columns[1]] : []),
-      labelColumn: prevConfig.labelColumn || '',
-      sizeColumn: prevConfig.sizeColumn || '',
+      xColumn: prevXValid ? prevConfig.xColumn : defaultX,
+      yColumns: validPrevY.length ? validPrevY : defaultY,
+      labelColumn: hasCol(prevConfig.labelColumn) ? prevConfig.labelColumn : '',
+      sizeColumn: hasCol(prevConfig.sizeColumn) ? prevConfig.sizeColumn : '',
     };
     columnConfigRef.current = newColumnConfig;
     onPropertiesUpdate({
@@ -371,8 +415,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     setState(prev => ({
       ...prev,
       ...partial,
-      // Hierarchy change invalidates the current drill position
-      ...(partial.drillDownColumns !== undefined ? { drillPath: [] } : {}),
+      // Hierarchy change invalidates the current drill position and any open detail panel
+      ...(partial.drillDownColumns !== undefined ? { drillPath: [], detailCategory: '' } : {}),
     }));
     onPropertiesUpdate(partial);
   };
@@ -432,10 +476,12 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     const bookmark = bookmarkList.filter(b => b.name === name)[0];
     if (!bookmark) return;
     const s = bookmark.state;
+    const hasCol = (c: string) => !!c && columns.includes(c);
+    const bookmarkY = s.yColumns ? s.yColumns.split(',').filter(Boolean).filter(hasCol) : [];
     const nextConfig: IColumnConfig = {
       ...columnConfigRef.current,
-      xColumn: s.xColumn || columnConfigRef.current.xColumn,
-      yColumns: s.yColumns ? s.yColumns.split(',').filter(Boolean) : columnConfigRef.current.yColumns,
+      xColumn: hasCol(s.xColumn) ? s.xColumn : columnConfigRef.current.xColumn,
+      yColumns: bookmarkY.length ? bookmarkY : columnConfigRef.current.yColumns,
     };
     columnConfigRef.current = nextConfig;
     setState(prev => ({
@@ -527,6 +573,13 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
 
   const { columns, dataSourceConfig, columnConfig, autoLoadError, isLoading, isConfigOpen, seriesColors } = state;
   const hasData = state.data.length > 0;
+  const numericColumns = React.useMemo(
+    () => columns.filter(col => state.data.some(row => {
+      const v = row[col];
+      return v !== null && v !== undefined && v !== '' && !isNaN(Number(v));
+    })),
+    [columns, state.data]
+  );
   const srcType = props.dataSourceType || 'upload';
 
   const effectiveColumnConfig: IColumnConfig = drillActive
@@ -575,10 +628,12 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
               {hasData && columns.length > 0 && (
                 <ColumnMapper
                   columns={columns}
+                  numericColumns={numericColumns}
                   config={columnConfig}
                   chartType={chartType}
                   seriesColors={seriesColors}
                   seriesTypes={state.seriesTypes}
+                  showAdvanced={props.showAdvancedOptions}
                   onChange={handleColumnConfigChange}
                   onSeriesColorsChange={handleSeriesColorsChange}
                   onSeriesTypesChange={handleSeriesTypesChange}
@@ -594,10 +649,11 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   filterValue={state.filterValue}
                   groupByColumn={state.groupByColumn}
                   aggregation={state.aggregation}
+                  showAdvanced={props.showAdvancedOptions}
                   onChange={handleDataControlsChange}
                 />
               )}
-              {hasData && columns.length > 0 && (
+              {hasData && columns.length > 0 && props.showAdvancedOptions && (
                 <AdvancedOptions
                   columns={columns}
                   chartType={chartType}

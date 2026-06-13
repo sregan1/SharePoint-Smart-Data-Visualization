@@ -246,9 +246,12 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     setTimeout(() => fileInputRef.current?.click(), 50);
   };
 
-  const showDelimiter = config.dataSourceType === 'upload' || config.dataSourceType === 'sharePointFile';
+  const isTextFile = (name: string) => /\.(csv|tsv|txt)(\?.*)?$/i.test(name);
   const isUpload = config.dataSourceType === 'upload';
   const hasLoadedFile = isUpload && !!uploadedFileName;
+  const showDelimiter =
+    (isUpload && !!uploadedFileName && isTextFile(uploadedFileName)) ||
+    (config.dataSourceType === 'sharePointFile' && !!config.dataUrl && isTextFile(config.dataUrl));
 
   return (
     <div className={styles.editPanel}>
@@ -307,20 +310,22 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
         </div>
       )}
 
-      {showDelimiter && (
+      {(showDelimiter || sheetNames.length > 1) && (
         <div className={styles.fieldRow}>
-          <div className={styles.fieldGroup}>
-            <label htmlFor={`${idPrefix}-delimiter`}>{strings.DelimiterLabel}</label>
-            <select
-              id={`${idPrefix}-delimiter`}
-              value={config.delimiter || ''}
-              onChange={e => onConfigChange({ delimiter: e.target.value })}
-            >
-              {DELIMITER_OPTIONS.map(opt => (
-                <option key={opt.label} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
+          {showDelimiter && (
+            <div className={styles.fieldGroup} style={{ flex: '0 0 auto', width: 160 }}>
+              <label htmlFor={`${idPrefix}-delimiter`}>{strings.DelimiterLabel}</label>
+              <select
+                id={`${idPrefix}-delimiter`}
+                value={config.delimiter || ''}
+                onChange={e => onConfigChange({ delimiter: e.target.value })}
+              >
+                {DELIMITER_OPTIONS.map(opt => (
+                  <option key={opt.label} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {sheetNames.length > 1 && (
             <div className={styles.fieldGroup}>
               <label htmlFor={`${idPrefix}-sheet`}>{strings.SheetNameLabel}</label>
