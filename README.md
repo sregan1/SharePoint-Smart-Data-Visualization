@@ -254,15 +254,23 @@ By default the pane shows a single page of essentials. Turning on **Show Advance
 
 ## Graph API Permissions
 
-> **This permission is optional.** It is only needed if you use the **Microsoft Graph** data source. The other four data sources (Upload File, SharePoint List, SharePoint File, REST API) and every chart feature work without it — you can safely deploy the package and leave the request unapproved.
+The package does **not** declare any Microsoft Graph permissions, so there is **no admin trust dialog** during deployment. The other four data sources (Upload File, SharePoint List, SharePoint File, REST API) and every chart feature work with no Graph permissions at all.
 
-The solution requests the following Microsoft Graph permission (declared in `config/package-solution.json`):
+To use the **Microsoft Graph** data source, a tenant admin must grant the required scope(s) manually:
 
-| Permission | Required | Enables |
-|---|---|---|
-| `User.Read` | Optional — only for the Microsoft Graph data source | Baseline sample scope; extend with the scopes your Graph endpoints need (e.g. `Reports.Read.All`, `Group.Read.All`) |
+**Option A — Manual grant (no redeployment needed):**
+1. Open **SharePoint Admin Center** → **Advanced** → **API access**.
+2. Click **Manage** (or **+ Add a request**) and add a permission for the `SharePoint Online Client Extensibility Web Application Principal`.
+3. Grant `User.Read` as a baseline. Add any additional scopes your Graph endpoints need (e.g. `Reports.Read.All`, `Group.Read.All`).
 
-To approve after deploying the package: **SharePoint Admin Center** → **Advanced** → **API access** → approve the pending request under *SharePoint Online Client Extensibility*. If you chart endpoints that need additional scopes, add them to `webApiPermissionRequests` in `config/package-solution.json` and redeploy. The other four data sources work without any Graph permissions.
+**Option B — Restore the package declaration (restores the standard trust-dialog flow):**
+Add the following to `config/package-solution.json` under `"solution"` and redeploy:
+```json
+"webApiPermissionRequests": [
+  { "resource": "Microsoft Graph", "scope": "User.Read" }
+]
+```
+SharePoint will then prompt for admin approval during the next deployment, after which the permission is pre-approved for all Graph calls.
 
 ---
 

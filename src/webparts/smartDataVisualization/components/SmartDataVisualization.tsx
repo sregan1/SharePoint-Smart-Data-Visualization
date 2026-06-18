@@ -292,18 +292,31 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   // the chart renders immediately without requiring a manual mapper change.
   React.useEffect(() => {
     if (!state.data.length) return;
-    if (NUMERIC_X_TYPES.indexOf(chartType) < 0) return;
+    const isNumericXType = NUMERIC_X_TYPES.indexOf(chartType) >= 0;
     const currentX = columnConfigRef.current.xColumn;
-    if (currentX && isNumericCol(currentX, state.data)) return;
-    const numericCols = state.columns.filter(col => isNumericCol(col, state.data));
-    if (!numericCols.length) return;
-    const newX = numericCols[0];
-    const currentY = columnConfigRef.current.yColumns.filter(c => isNumericCol(c, state.data));
-    const newY = currentY.length ? currentY : numericCols.length >= 2 ? [numericCols[1]] : [numericCols[0]];
-    const newConfig: IColumnConfig = { ...columnConfigRef.current, xColumn: newX, yColumns: newY };
-    columnConfigRef.current = newConfig;
-    onPropertiesUpdate({ xColumn: newX, yColumns: newY.join(',') });
-    setState(prev => ({ ...prev, columnConfig: newConfig }));
+    if (isNumericXType) {
+      // Switching TO a numeric-X chart: ensure X is numeric
+      if (currentX && isNumericCol(currentX, state.data)) return;
+      const numericCols = state.columns.filter(col => isNumericCol(col, state.data));
+      if (!numericCols.length) return;
+      const newX = numericCols[0];
+      const currentY = columnConfigRef.current.yColumns.filter(c => isNumericCol(c, state.data));
+      const newY = currentY.length ? currentY : numericCols.length >= 2 ? [numericCols[1]] : [numericCols[0]];
+      const newConfig: IColumnConfig = { ...columnConfigRef.current, xColumn: newX, yColumns: newY };
+      columnConfigRef.current = newConfig;
+      onPropertiesUpdate({ xColumn: newX, yColumns: newY.join(',') });
+      setState(prev => ({ ...prev, columnConfig: newConfig }));
+    } else {
+      // Switching FROM a numeric-X chart: if X is still numeric, reset to first non-numeric column
+      if (!currentX || !isNumericCol(currentX, state.data)) return;
+      const nonNumericCols = state.columns.filter(col => !isNumericCol(col, state.data));
+      const newX = nonNumericCols[0] || state.columns[0] || '';
+      if (!newX || newX === currentX) return;
+      const newConfig: IColumnConfig = { ...columnConfigRef.current, xColumn: newX };
+      columnConfigRef.current = newConfig;
+      onPropertiesUpdate({ xColumn: newX });
+      setState(prev => ({ ...prev, columnConfig: newConfig }));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartType]);
 

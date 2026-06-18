@@ -176,9 +176,9 @@ Use this to chart data from Microsoft Graph — group memberships, usage reports
 3. (Optional) Enter a **Data Path** if the array is nested; the standard `value` envelope is unwrapped automatically.
 4. Click **Load Data**.
 
-> **Administrator approval required (for this source only):** Graph calls only work after a tenant admin approves the solution's Graph permissions in **SharePoint Admin Center → Advanced → API access**. The package requests `User.Read` as a baseline; endpoints that need more (e.g. `Reports.Read.All`) require those scopes to be added to the package and approved. If you see a 401/403 error, this is almost always the cause.
+> **Administrator action required (for this source only):** The package does not declare any Graph permissions, so there is no trust dialog during deployment. Graph calls only work after a tenant admin manually grants the required scope(s) — go to **SharePoint Admin Center → Advanced → API access → Manage** and add `User.Read` (or any additional scopes your endpoints need, such as `Reports.Read.All`) for `SharePoint Online Client Extensibility Web Application Principal`. If you see a 401/403 error, this is almost always the cause.
 >
-> The permission is **entirely optional** — if you don't use the Microsoft Graph source, the request can stay unapproved and every other data source and feature works normally.
+> This is **entirely optional** — if you don't use the Microsoft Graph source, no action is needed and every other data source and feature works normally.
 
 ---
 

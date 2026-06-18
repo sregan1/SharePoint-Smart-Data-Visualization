@@ -1,17 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "smart-data-visualization-client-side-solution",
+    "name": "Smart Data Visualization",
     "id": "a8f3c2e1-b5d7-4f6e-9a2c-1d8e3f5b7c9a",
-    "version": "1.1.0.0",
+    "version": "1.1.1.0",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
-    "webApiPermissionRequests": [
-      {
-        "resource": "Microsoft Graph",
-        "scope": "User.Read"
-      }
-    ],
     "developer": {
       "name": "SharePoint Smart Solutions",
       "websiteUrl": "http://sharepointsmartsolutions.com",
@@ -24,7 +18,7 @@
         "default": "Visualize data from multiple sources with various chart types"
       },
       "longDescription": {
-        "default": "Smart Data Visualization web part for SharePoint - supports CSV, Excel, SharePoint lists, REST APIs, Microsoft Graph, and more with 15 chart types, drill-down, bookmarks, and analytics. NOTE: The requested Microsoft Graph permission (User.Read) is OPTIONAL - it is only needed if you use the Microsoft Graph data source. All other data sources and features work without approving it."
+        "default": "Smart Data Visualization web part for SharePoint - supports CSV, Excel, SharePoint lists, REST APIs, Microsoft Graph, and more with 15 chart types, drill-down, bookmarks, and analytics. No API permissions are declared — the Microsoft Graph data source requires a tenant admin to manually grant Graph scopes via API access; all other data sources work with no permissions."
       },
       "screenshotPaths": [],
       "videoUrl": "",

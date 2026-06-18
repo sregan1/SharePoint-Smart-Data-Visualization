@@ -1,6 +1,6 @@
 {
   "name": "smart-data-visualization",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "engines": {
     "node": ">=16.13.0 <19.0.0"
@@ -9,6 +9,7 @@
   "scripts": {
     "build": "gulp bundle",
     "clean": "gulp clean",
+    "ship": "gulp clean && gulp bundle --ship && gulp package-solution --ship",
     "test": "jest",
     "screenshots": "node mockups/take-screenshots.js"
   },

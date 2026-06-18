@@ -4,6 +4,22 @@ All notable changes to Smart Data Visualization are documented here.
 
 ---
 
+## [1.1.1] — 2026-06-17
+
+### Added
+
+- `npm run ship` script: runs `gulp clean && gulp bundle --ship && gulp package-solution --ship` in a single command for a clean release build
+
+### Changed
+
+- Removed the `webApiPermissionRequests` declaration from `package-solution.json` — deploying the package no longer triggers an admin trust/API approval dialog. To use the Microsoft Graph data source, a tenant admin must now manually grant the required scope(s) via **SharePoint Admin Center → Advanced → API access**. See the README "Graph API Permissions" section for full instructions.
+
+### Fixed
+
+- Switching from a Scatter, Bubble, or Histogram chart back to a category-axis chart type (Bar, Line, Area, etc.) no longer retains the numeric X column; the X axis now automatically resets to the first non-numeric column (e.g. country names, categories)
+
+---
+
 ## [1.1.0] — 2026-06-13
 
 ### Added — Chart Types
