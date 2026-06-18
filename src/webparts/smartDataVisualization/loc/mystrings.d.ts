@@ -36,6 +36,8 @@ declare interface ISmartDataVisualizationWebPartStrings {
   ChartTypeHistogramLabel: string;
   ChartTypeWaterfallLabel: string;
   ChartTypeBoxplotLabel: string;
+  ChartTypeViolinLabel: string;
+  ChartTypeBeforeAfterLabel: string;
   ChartTypeTreemapLabel: string;
   ChartTypeHeatmapLabel: string;
   HistogramBinsFieldLabel: string;
@@ -74,6 +76,8 @@ declare interface ISmartDataVisualizationWebPartStrings {
   AutoPlaceholder: string;
   NumericValidationError: string;
   LogScaleFieldLabel: string;
+  LogScaleXFieldLabel: string;
+  StepLineFieldLabel: string;
   ShowGridLinesFieldLabel: string;
   XLabelRotationFieldLabel: string;
   // Axes — X axis type
@@ -98,10 +102,30 @@ declare interface ISmartDataVisualizationWebPartStrings {
   RefLineFixed: string;
   RefLineMean: string;
   RefLineMedian: string;
+  // Dual Y axis
+  DualAxisGroupName: string;
+  Y2ColumnsFieldLabel: string;
+  Y2ColumnsPlaceholder: string;
+  Y2AxisLabelFieldLabel: string;
+  // Error bars
+  ErrorBarsGroupName: string;
+  ErrorBarTypeFieldLabel: string;
+  ErrorBarTypeNone: string;
+  ErrorBarTypeCustom: string;
+  ErrorBarTypeSd: string;
+  ErrorBarTypeSem: string;
+  ErrorBarColumnFieldLabel: string;
+  // Significance brackets
+  SignificanceGroupName: string;
+  SignificancePairsFieldLabel: string;
+  SignificancePairsPlaceholder: string;
+  SignificancePairsHelp: string;
   // Interactivity
   InteractivityGroupName: string;
   ShowViewerFiltersFieldLabel: string;
   DetailsOnDemandFieldLabel: string;
+  ShowDataPointsFieldLabel: string;
+  ShowBubbleSizeLegendFieldLabel: string;
   ViewerFilterLabel: string;
   ViewerFilterColumnAria: string;
   ViewerFilterValueAria: string;

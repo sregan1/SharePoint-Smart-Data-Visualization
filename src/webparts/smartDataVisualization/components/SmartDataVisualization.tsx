@@ -802,6 +802,15 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             tooltipColumns={state.tooltipColumns}
             aggregation={effectiveAggregation}
             onItemSelected={handleItemSelected}
+            logScaleX={props.logScaleX || false}
+            stepLine={props.stepLine || false}
+            y2Columns={props.y2Columns || ''}
+            y2AxisLabel={props.y2AxisLabel || ''}
+            errorBarType={props.errorBarType || 'none'}
+            errorBarColumn={props.errorBarColumn || ''}
+            showDataPoints={props.showDataPoints || false}
+            significancePairs={props.significancePairs || ''}
+            showBubbleSizeLegend={props.showBubbleSizeLegend || false}
           />
         )}
       </div>

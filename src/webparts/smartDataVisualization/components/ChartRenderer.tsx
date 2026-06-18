@@ -20,7 +20,7 @@ import {
   Filler,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
-import { BoxPlotController, BoxAndWiskers } from '@sgratzl/chartjs-chart-boxplot';
+import { BoxPlotController, BoxAndWiskers, ViolinController, Violin } from '@sgratzl/chartjs-chart-boxplot';
 import { TreemapController, TreemapElement } from 'chartjs-chart-treemap';
 import { MatrixController, MatrixElement } from 'chartjs-chart-matrix';
 import { Bar, Line, Scatter, Pie, Doughnut, Bubble, Radar, Chart as GenericChart } from 'react-chartjs-2';
@@ -62,6 +62,8 @@ ChartJS.register(
   Filler,
   BoxPlotController,
   BoxAndWiskers,
+  ViolinController,
+  Violin,
   TreemapController,
   TreemapElement,
   MatrixController,
@@ -110,6 +112,15 @@ interface IChartRendererProps {
   tooltipColumns: string;
   aggregation: string;
   onItemSelected?: (selection: IChartSelection) => void;
+  logScaleX?: boolean;
+  stepLine?: boolean;
+  y2Columns?: string;
+  y2AxisLabel?: string;
+  errorBarType?: string;
+  errorBarColumn?: string;
+  showDataPoints?: boolean;
+  significancePairs?: string;
+  showBubbleSizeLegend?: boolean;
 }
 
 const formatValue = (
@@ -203,6 +214,14 @@ const downloadUrl = (url: string, filename: string) => {
   document.body.removeChild(a);
 };
 
+const computeStdDev = (values: (number | null)[]): number => {
+  const nums = values.filter((v): v is number => v !== null);
+  if (nums.length < 2) return 0;
+  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+  const variance = nums.reduce((a, b) => a + (b - mean) ** 2, 0) / (nums.length - 1);
+  return Math.sqrt(variance);
+};
+
 const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   const {
     data,
@@ -245,6 +264,15 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     tooltipColumns,
     aggregation,
     onItemSelected,
+    logScaleX,
+    stepLine,
+    y2Columns,
+    y2AxisLabel,
+    errorBarType,
+    errorBarColumn,
+    showDataPoints,
+    significancePairs,
+    showBubbleSizeLegend,
   } = props;
 
   // SharePoint section backgrounds in dark mode need light chart text/grid lines
@@ -437,6 +465,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     },
   } : undefined;
 
+  const y2ColSet = new Set(
+    (y2Columns || '').split(',').map(s => s.trim()).filter(Boolean)
+  );
+  const hasDualAxis = y2ColSet.size > 0 &&
+    ['bar', 'horizontalBar', 'line', 'area'].indexOf(chartType) >= 0;
+
   const yAxisConfig: any = {
     stacked,
     type: logScale ? 'logarithmic' : 'linear',
@@ -449,7 +483,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
 
   const xAxisConfig: any = {
     stacked,
-    type: xIsTime ? 'time' : undefined,
+    type: logScaleX ? 'logarithmic' : (xIsTime ? 'time' : undefined),
     grid: { display: showGridLines, color: gridColor },
     title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
     ticks: {
@@ -473,7 +507,19 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
 
   const cartesianOptions: any = {
     ...baseOptions,
-    scales: { x: xAxisConfig, y: yAxisConfig },
+    scales: {
+      x: xAxisConfig,
+      y: yAxisConfig,
+      ...(hasDualAxis ? {
+        y1: {
+          type: logScale ? 'logarithmic' : 'linear',
+          position: 'right' as const,
+          grid: { display: false },
+          ticks: { color: textColor },
+          title: { display: !!(y2AxisLabel), text: y2AxisLabel || '', color: textColor },
+        },
+      } : {}),
+    },
   };
 
   const horizontalOptions: any = {
@@ -540,6 +586,22 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         fill: override ? false : ct === 'area',
         tension: 0.3,
         pointRadius: renderedAsBar ? undefined : 3,
+        stepped: (stepLine && (ct === 'line' || ct === 'area')) ? true : undefined,
+        yAxisID: hasDualAxis ? (y2ColSet.has(col) ? 'y1' : 'y') : undefined,
+        _errorValues: (() => {
+          if (!errorBarType || errorBarType === 'none') return undefined;
+          const vals = data.map(row => numOrNull(row[col]));
+          if (errorBarType === 'custom') {
+            return data.map(row => Math.abs(numOrNull(row[errorBarColumn || '']) ?? 0));
+          }
+          const sd = computeStdDev(vals);
+          if (errorBarType === 'sd') return vals.map(() => sd);
+          if (errorBarType === 'sem') {
+            const n = vals.filter(v => v !== null).length;
+            return vals.map(() => (n > 0 ? sd / Math.sqrt(n) : 0));
+          }
+          return undefined;
+        })(),
       };
     });
 
@@ -602,6 +664,30 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
           datalabels: { display: false },
         });
       }
+    }
+
+    // Data point overlay on bar charts: thin line dataset with visible points, no line
+    if (showDataPoints && (ct === 'bar' || ct === 'horizontalBar')) {
+      validYColumns.forEach((col, i) => {
+        const color = colors[i];
+        const vals = data.map(row => numOrNull(row[col]));
+        datasets.push({
+          label: `${col} (points)`,
+          type: 'line' as any,
+          data: xIsTime ? toPoints(vals) : vals,
+          backgroundColor: color,
+          borderColor: color,
+          borderWidth: 0,
+          pointRadius: 5,
+          pointBackgroundColor: color,
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1,
+          fill: false,
+          tension: 0,
+          yAxisID: hasDualAxis ? (y2ColSet.has(col) ? 'y1' : 'y') : undefined,
+          datalabels: { display: false },
+        });
+      });
     }
 
     if (xIsTime) return { datasets };
@@ -768,7 +854,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     };
   };
 
-  const buildBoxplotData = () => {
+  const buildBoxplotData = (forViolin: boolean = false) => {
     const keys: string[] = [];
     const groups: Record<string, number[]> = {};
     for (const row of data) {
@@ -789,6 +875,29 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         outlierBackgroundColor: color,
         itemRadius: 0,
       }],
+    };
+  };
+
+  const buildBeforeAfterData = () => {
+    const col1 = validYColumns[0] || '';
+    const col2 = validYColumns[1] || validYColumns[0] || '';
+    const baColors = resolveColors(colorPalette, seriesColors, data.length);
+    return {
+      labels: ['Before', 'After'],
+      datasets: data.map((row, i) => {
+        const color = baColors[i % baColors.length];
+        return {
+          label: String(row[xColumn] ?? `Row ${i + 1}`),
+          data: [numOrNull(row[col1]), numOrNull(row[col2])],
+          borderColor: `${color}bb`,
+          backgroundColor: `${color}60`,
+          borderWidth: 1.5,
+          pointRadius: 5,
+          pointBackgroundColor: color,
+          fill: false,
+          tension: 0,
+        };
+      }),
     };
   };
 
@@ -984,6 +1093,105 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     },
   };
 
+  // Inline plugin: vertical error bars drawn on top of bar/line charts
+  const errorBarsPlugin: any = (errorBarType && errorBarType !== 'none' &&
+    ['bar', 'horizontalBar', 'line', 'area'].indexOf(chartType) >= 0) ? {
+    id: 'errorBars',
+    afterDatasetsDraw(chart: any) {
+      const ctx = chart.ctx;
+      const isHoriz = chartType === 'horizontalBar';
+      chart.data.datasets.forEach((dataset: any, di: number) => {
+        if (!dataset._errorValues) return;
+        const meta = chart.getDatasetMeta(di);
+        if (meta.hidden) return;
+        ctx.save();
+        ctx.strokeStyle = typeof dataset.borderColor === 'string' ? dataset.borderColor : '#666666';
+        ctx.lineWidth = 1.5;
+        const capLen = 5;
+        meta.data.forEach((el: any, i: number) => {
+          const err = dataset._errorValues[i];
+          if (!err || err <= 0) return;
+          const xPx = el.x;
+          const yPx = el.y;
+          const yScale = chart.scales[dataset.yAxisID || 'y'] || chart.scales.y;
+          const xScale = chart.scales.x;
+          if (!yScale || !xScale) return;
+          const errPx = isHoriz
+            ? Math.abs(xScale.getPixelForValue(err) - xScale.getPixelForValue(0))
+            : Math.abs(yScale.getPixelForValue(err) - yScale.getPixelForValue(0));
+          ctx.beginPath();
+          if (isHoriz) {
+            ctx.moveTo(xPx - errPx, yPx); ctx.lineTo(xPx + errPx, yPx);
+            ctx.moveTo(xPx - errPx, yPx - capLen); ctx.lineTo(xPx - errPx, yPx + capLen);
+            ctx.moveTo(xPx + errPx, yPx - capLen); ctx.lineTo(xPx + errPx, yPx + capLen);
+          } else {
+            ctx.moveTo(xPx, yPx - errPx); ctx.lineTo(xPx, yPx + errPx);
+            ctx.moveTo(xPx - capLen, yPx - errPx); ctx.lineTo(xPx + capLen, yPx - errPx);
+            ctx.moveTo(xPx - capLen, yPx + errPx); ctx.lineTo(xPx + capLen, yPx + errPx);
+          }
+          ctx.stroke();
+        });
+        ctx.restore();
+      });
+    },
+  } : null;
+
+  // Inline plugin: significance annotation brackets above bars
+  const sigPairs: Array<{ col1: string; col2: string; label: string }> = (() => {
+    if (!significancePairs || !significancePairs.trim()) return [];
+    try {
+      const parsed = JSON.parse(significancePairs);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  })();
+  const significancePlugin: any = sigPairs.length > 0 &&
+    (chartType === 'bar' || chartType === 'horizontalBar') ? {
+    id: 'significanceBrackets',
+    afterDraw(chart: any) {
+      const ctx = chart.ctx;
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      if (!xScale || !yScale) return;
+      ctx.save();
+      ctx.strokeStyle = textColor;
+      ctx.fillStyle = textColor;
+      ctx.lineWidth = 1.5;
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center' as CanvasTextAlign;
+      sigPairs.forEach((pair, pairIdx) => {
+        let x1: number, x2: number;
+        try { x1 = xScale.getPixelForValue(pair.col1); x2 = xScale.getPixelForValue(pair.col2); }
+        catch { return; }
+        const labels = chart.data.labels as string[] || [];
+        const i1 = labels.indexOf(pair.col1);
+        const i2 = labels.indexOf(pair.col2);
+        let maxVal = -Infinity;
+        chart.data.datasets.forEach((ds: any) => {
+          [i1, i2].forEach(idx => {
+            if (idx < 0) return;
+            const v = ds.data[idx];
+            const num = typeof v === 'number' ? v : (v && typeof v === 'object' ? (v as any).y : null);
+            if (typeof num === 'number' && num > maxVal) maxVal = num;
+          });
+        });
+        const bracketH = 6;
+        const gap = 4;
+        const levelOffset = pairIdx * 24;
+        const topY = (maxVal > -Infinity ? yScale.getPixelForValue(maxVal) : yScale.top) - gap - levelOffset;
+        ctx.beginPath();
+        ctx.moveTo(x1, topY + bracketH);
+        ctx.lineTo(x1, topY);
+        ctx.lineTo(x2, topY);
+        ctx.lineTo(x2, topY + bracketH);
+        ctx.stroke();
+        ctx.fillText(pair.label || '*', (x1 + x2) / 2, topY - 3);
+      });
+      ctx.restore();
+    },
+  } : null;
+
+  const barLinePlugins = [errorBarsPlugin, significancePlugin].filter(Boolean);
+
   // Forwarded to the underlying <canvas> so screen readers announce the chart
   const a11y = {
     'aria-label': chartTitle || strings.ChartAriaLabel,
@@ -995,19 +1203,19 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   try {
     if (chartType === 'bar') {
       chartElement = (
-        <Bar ref={chartRef} data={buildBarLineData('bar') as any} options={cartesianOptions} {...a11y} />
+        <Bar ref={chartRef} data={buildBarLineData('bar') as any} options={cartesianOptions} plugins={barLinePlugins} {...a11y} />
       );
     } else if (chartType === 'horizontalBar') {
       chartElement = (
-        <Bar ref={chartRef} data={buildBarLineData('horizontalBar') as any} options={horizontalOptions} {...a11y} />
+        <Bar ref={chartRef} data={buildBarLineData('horizontalBar') as any} options={horizontalOptions} plugins={barLinePlugins} {...a11y} />
       );
     } else if (chartType === 'line') {
       chartElement = (
-        <Line ref={chartRef} data={buildBarLineData('line') as any} options={cartesianOptions} {...a11y} />
+        <Line ref={chartRef} data={buildBarLineData('line') as any} options={cartesianOptions} plugins={[errorBarsPlugin].filter(Boolean)} {...a11y} />
       );
     } else if (chartType === 'area') {
       chartElement = (
-        <Line ref={chartRef} data={buildBarLineData('area') as any} options={cartesianOptions} {...a11y} />
+        <Line ref={chartRef} data={buildBarLineData('area') as any} options={cartesianOptions} plugins={[errorBarsPlugin].filter(Boolean)} {...a11y} />
       );
     } else if (chartType === 'scatter') {
       chartElement = (
@@ -1041,6 +1249,14 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
       chartElement = (
         <GenericChart ref={chartRef} type={'boxplot' as any} data={buildBoxplotData() as any} options={boxplotOptions} {...a11y} />
       );
+    } else if (chartType === 'violin') {
+      chartElement = (
+        <GenericChart ref={chartRef} type={'violin' as any} data={buildBoxplotData() as any} options={boxplotOptions} {...a11y} />
+      );
+    } else if (chartType === 'beforeAfter') {
+      chartElement = (
+        <Line ref={chartRef} data={buildBeforeAfterData() as any} options={cartesianOptions} {...a11y} />
+      );
     } else if (chartType === 'treemap') {
       chartElement = (
         <GenericChart ref={chartRef} type={'treemap' as any} data={buildTreemapData() as any} options={treemapOptions} {...a11y} />
@@ -1070,6 +1286,36 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     <div>
       <div style={{ height: `${chartHeight || 400}px`, position: 'relative' }}>
         {chartElement}
+        {showBubbleSizeLegend && chartType === 'bubble' && sizeColumn && (() => {
+          const sizeVals = data.map(r => numOrNull(r[sizeColumn])).filter((v): v is number => v !== null);
+          if (!sizeVals.length) return null;
+          const minV = Math.min(...sizeVals);
+          const maxV = Math.max(...sizeVals);
+          const midV = (minV + maxV) / 2;
+          const toR = (v: number) => Math.max(3, Math.sqrt(Math.abs(v)) * 3);
+          const entries = [{ v: maxV, r: toR(maxV) }, { v: midV, r: toR(midV) }, { v: minV, r: toR(minV) }];
+          const maxR = toR(maxV);
+          return (
+            <div style={{
+              position: 'absolute', bottom: 8, right: 8,
+              background: isDarkTheme ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.88)',
+              border: `1px solid ${gridColor}`, borderRadius: 4, padding: '6px 10px',
+              display: 'flex', alignItems: 'flex-end', gap: 8, fontSize: 11, color: textColor,
+            }}>
+              {entries.map(({ v, r }) => (
+                <div key={v} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', height: maxR * 2 + 4 }}>
+                    <div style={{
+                      width: r * 2, height: r * 2, borderRadius: '50%',
+                      background: `${colors[0]}80`, border: `1px solid ${colors[0]}`,
+                    }} />
+                  </div>
+                  <span>{formatValue(v, valuePrefix, valueSuffix, valueDecimals, abbreviateNumbers)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       {showExportBar && (
         <ExportBar

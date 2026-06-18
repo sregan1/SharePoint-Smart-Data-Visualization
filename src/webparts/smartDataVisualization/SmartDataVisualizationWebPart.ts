@@ -147,6 +147,21 @@ export default class SmartDataVisualizationWebPart
         bookmarks: p.bookmarks || '',
         // UI mode
         showAdvancedOptions: p.showAdvancedOptions || false,
+        // Axes (advanced)
+        logScaleX: p.logScaleX || false,
+        stepLine: p.stepLine || false,
+        // Dual Y axis
+        y2Columns: p.y2Columns || '',
+        y2AxisLabel: p.y2AxisLabel || '',
+        // Error bars
+        errorBarType: p.errorBarType || 'none',
+        errorBarColumn: p.errorBarColumn || '',
+        // Data point overlay
+        showDataPoints: p.showDataPoints || false,
+        // Significance brackets
+        significancePairs: p.significancePairs || '',
+        // Bubble size legend
+        showBubbleSizeLegend: p.showBubbleSizeLegend || false,
         // Framework
         context: this.context,
         isDarkTheme: this._isDarkTheme,
@@ -195,6 +210,7 @@ export default class SmartDataVisualizationWebPart
   // fields — the pane must rebuild for those states to update live.
   private static readonly PANE_STRUCTURE_FIELDS = [
     'showAdvancedOptions', 'chartType', 'showLegend', 'trendline', 'referenceLineType',
+    'errorBarType', 'stepLine',
   ];
 
   protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: unknown, newValue: unknown): void {
@@ -225,6 +241,8 @@ export default class SmartDataVisualizationWebPart
       { key: 'histogram',     text: strings.ChartTypeHistogramLabel },
       { key: 'waterfall',     text: strings.ChartTypeWaterfallLabel },
       { key: 'boxplot',       text: strings.ChartTypeBoxplotLabel },
+      { key: 'violin',        text: strings.ChartTypeViolinLabel },
+      { key: 'beforeAfter',   text: strings.ChartTypeBeforeAfterLabel },
       { key: 'treemap',       text: strings.ChartTypeTreemapLabel },
       { key: 'heatmap',       text: strings.ChartTypeHeatmapLabel },
     ];
@@ -393,23 +411,37 @@ export default class SmartDataVisualizationWebPart
                 }),
               ],
             },
-            {
+            ...(['pie', 'doughnut', 'kpi', 'treemap', 'heatmap', 'radar'].indexOf(currentType) < 0 ? [{
               groupName: strings.AxesGridGroupName,
               groupFields: [
-                PropertyPaneTextField('yAxisMin', {
-                  label: strings.YAxisMinFieldLabel,
-                  placeholder: strings.AutoPlaceholder,
-                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
-                }),
-                PropertyPaneTextField('yAxisMax', {
-                  label: strings.YAxisMaxFieldLabel,
-                  placeholder: strings.AutoPlaceholder,
-                  onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
-                }),
+                ...(['bar', 'horizontalBar', 'line', 'area', 'waterfall', 'histogram', 'boxplot', 'violin', 'beforeAfter'].indexOf(currentType) >= 0 ? [
+                  PropertyPaneTextField('yAxisMin', {
+                    label: strings.YAxisMinFieldLabel,
+                    placeholder: strings.AutoPlaceholder,
+                    onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
+                  }),
+                  PropertyPaneTextField('yAxisMax', {
+                    label: strings.YAxisMaxFieldLabel,
+                    placeholder: strings.AutoPlaceholder,
+                    onGetErrorMessage: (value: string) => this._validateOptionalNumber(value),
+                  }),
+                ] : []),
                 PropertyPaneToggle('logScale', {
                   label: strings.LogScaleFieldLabel,
                   checked: this.properties.logScale || false,
                 }),
+                ...(['scatter', 'bubble', 'histogram'].indexOf(currentType) >= 0 ? [
+                  PropertyPaneToggle('logScaleX', {
+                    label: strings.LogScaleXFieldLabel,
+                    checked: this.properties.logScaleX || false,
+                  }),
+                ] : []),
+                ...(['line', 'area'].indexOf(currentType) >= 0 ? [
+                  PropertyPaneToggle('stepLine', {
+                    label: strings.StepLineFieldLabel,
+                    checked: this.properties.stepLine || false,
+                  }),
+                ] : []),
                 PropertyPaneToggle('showGridLines', {
                   label: strings.ShowGridLinesFieldLabel,
                   checked: this.properties.showGridLines !== false,
@@ -421,24 +453,26 @@ export default class SmartDataVisualizationWebPart
                   step: 15,
                   value: this.properties.xLabelRotation !== undefined ? this.properties.xLabelRotation : 0,
                 }),
-                PropertyPaneDropdown('xAxisType', {
-                  label: strings.XAxisTypeFieldLabel,
-                  options: [
-                    { key: 'auto', text: strings.XAxisTypeAuto },
-                    { key: 'category', text: strings.XAxisTypeCategory },
-                    { key: 'time', text: strings.XAxisTypeTime },
-                  ],
-                  selectedKey: this.properties.xAxisType || 'auto',
-                }),
+                ...(['bar', 'line', 'area'].indexOf(currentType) >= 0 ? [
+                  PropertyPaneDropdown('xAxisType', {
+                    label: strings.XAxisTypeFieldLabel,
+                    options: [
+                      { key: 'auto', text: strings.XAxisTypeAuto },
+                      { key: 'category', text: strings.XAxisTypeCategory },
+                      { key: 'time', text: strings.XAxisTypeTime },
+                    ],
+                    selectedKey: this.properties.xAxisType || 'auto',
+                  }),
+                ] : []),
               ],
-            },
+            }] : []),
           ],
         },
         {
           header: { description: strings.AdvancedPageDescription },
           displayGroupsAsAccordion: true,
           groups: [
-            ...(['pie', 'doughnut', 'treemap', 'heatmap', 'kpi'].indexOf(currentType) < 0 ? [
+            ...(['bar', 'horizontalBar', 'line', 'area', 'scatter'].indexOf(currentType) >= 0 ? [
             {
               groupName: strings.AnalyticsGroupName,
               groupFields: [
@@ -469,6 +503,8 @@ export default class SmartDataVisualizationWebPart
                 }),
               ],
             },
+            ] : []),
+            ...(['bar', 'horizontalBar', 'line', 'area'].indexOf(currentType) >= 0 ? [
             {
               groupName: strings.ReferenceLineGroupName,
               groupFields: [
@@ -495,6 +531,57 @@ export default class SmartDataVisualizationWebPart
               ],
             },
             ] : []),
+            ...(['bar', 'horizontalBar', 'line', 'area'].indexOf(currentType) >= 0 ? [
+            {
+              groupName: strings.DualAxisGroupName,
+              groupFields: [
+                PropertyPaneTextField('y2Columns', {
+                  label: strings.Y2ColumnsFieldLabel,
+                  placeholder: strings.Y2ColumnsPlaceholder,
+                  value: this.properties.y2Columns || '',
+                }),
+                PropertyPaneTextField('y2AxisLabel', {
+                  label: strings.Y2AxisLabelFieldLabel,
+                  value: this.properties.y2AxisLabel || '',
+                }),
+              ],
+            },
+            {
+              groupName: strings.ErrorBarsGroupName,
+              groupFields: [
+                PropertyPaneDropdown('errorBarType', {
+                  label: strings.ErrorBarTypeFieldLabel,
+                  options: [
+                    { key: 'none', text: strings.ErrorBarTypeNone },
+                    { key: 'custom', text: strings.ErrorBarTypeCustom },
+                    { key: 'sd', text: strings.ErrorBarTypeSd },
+                    { key: 'sem', text: strings.ErrorBarTypeSem },
+                  ],
+                  selectedKey: this.properties.errorBarType || 'none',
+                }),
+                PropertyPaneTextField('errorBarColumn', {
+                  label: strings.ErrorBarColumnFieldLabel,
+                  value: this.properties.errorBarColumn || '',
+                  disabled: (this.properties.errorBarType || 'none') !== 'custom',
+                }),
+              ],
+            },
+            ] : []),
+            ...(['bar', 'horizontalBar'].indexOf(currentType) >= 0 ? [
+            {
+              groupName: strings.SignificanceGroupName,
+              groupFields: [
+                PropertyPaneTextField('significancePairs', {
+                  label: strings.SignificancePairsFieldLabel,
+                  placeholder: strings.SignificancePairsPlaceholder,
+                  description: strings.SignificancePairsHelp,
+                  multiline: true,
+                  rows: 3,
+                  value: this.properties.significancePairs || '',
+                }),
+              ],
+            },
+            ] : []),
             {
               groupName: strings.InteractivityGroupName,
               groupFields: [
@@ -506,8 +593,21 @@ export default class SmartDataVisualizationWebPart
                   label: strings.DetailsOnDemandFieldLabel,
                   checked: this.properties.detailsOnDemand || false,
                 }),
+                ...(['bar', 'horizontalBar'].indexOf(currentType) >= 0 ? [
+                  PropertyPaneToggle('showDataPoints', {
+                    label: strings.ShowDataPointsFieldLabel,
+                    checked: this.properties.showDataPoints || false,
+                  }),
+                ] : []),
+                ...(currentType === 'bubble' ? [
+                  PropertyPaneToggle('showBubbleSizeLegend', {
+                    label: strings.ShowBubbleSizeLegendFieldLabel,
+                    checked: this.properties.showBubbleSizeLegend || false,
+                  }),
+                ] : []),
               ],
             },
+            ...(['bar', 'horizontalBar', 'line', 'area', 'scatter', 'bubble', 'histogram', 'kpi'].indexOf(currentType) >= 0 ? [
             {
               groupName: strings.ConditionalGroupName,
               groupFields: [
@@ -530,6 +630,7 @@ export default class SmartDataVisualizationWebPart
                 }),
               ],
             },
+            ] : []),
             {
               groupName: strings.DataRefreshGroupName,
               groupFields: [

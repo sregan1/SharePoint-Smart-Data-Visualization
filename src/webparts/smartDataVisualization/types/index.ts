@@ -14,8 +14,10 @@ export type ChartType =
   | 'histogram'
   | 'waterfall'
   | 'boxplot'
+  | 'violin'
   | 'treemap'
-  | 'heatmap';
+  | 'heatmap'
+  | 'beforeAfter';
 
 export type ReferenceLineType = 'none' | 'fixed' | 'mean' | 'median';
 
@@ -175,7 +177,8 @@ export const needsNumericX = (chartType: ChartType): boolean =>
 export const isSingleValueType = (chartType: ChartType): boolean =>
   chartType === 'pie' || chartType === 'doughnut' || chartType === 'scatter' ||
   chartType === 'bubble' || chartType === 'kpi' || chartType === 'waterfall' ||
-  chartType === 'boxplot' || chartType === 'treemap' || chartType === 'heatmap';
+  chartType === 'boxplot' || chartType === 'violin' || chartType === 'treemap' ||
+  chartType === 'heatmap';
 
 // KPI shows a single aggregated number — no X axis at all
 export const hasNoXColumn = (chartType: ChartType): boolean => chartType === 'kpi';
@@ -185,3 +188,17 @@ export const hasNoYColumn = (chartType: ChartType): boolean => chartType === 'hi
 
 // Heatmap needs a second (row) category column
 export const needsRowColumn = (chartType: ChartType): boolean => chartType === 'heatmap';
+
+// Chart types that support error bars
+export const supportsErrorBars = (chartType: ChartType): boolean =>
+  chartType === 'bar' || chartType === 'horizontalBar' ||
+  chartType === 'line' || chartType === 'area';
+
+// Chart types that support a secondary (right) Y axis
+export const supportsDualAxis = (chartType: ChartType): boolean =>
+  chartType === 'bar' || chartType === 'horizontalBar' ||
+  chartType === 'line' || chartType === 'area';
+
+// Chart types that support data point overlay
+export const supportsDataPointOverlay = (chartType: ChartType): boolean =>
+  chartType === 'bar' || chartType === 'horizontalBar';

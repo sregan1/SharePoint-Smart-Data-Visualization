@@ -93,6 +93,21 @@ export interface ISmartDataVisualizationWebPartProps {
   bookmarks: string;
   // UI mode: false = simple editing experience (default), true = all options
   showAdvancedOptions: boolean;
+  // Axes (advanced)
+  logScaleX: boolean;
+  stepLine: boolean;
+  // Dual Y axis
+  y2Columns: string;
+  y2AxisLabel: string;
+  // Error bars
+  errorBarType: string;
+  errorBarColumn: string;
+  // Data point overlay on bar charts
+  showDataPoints: boolean;
+  // Significance annotation brackets
+  significancePairs: string;
+  // Bubble chart size legend
+  showBubbleSizeLegend: boolean;
 }
 
 export interface ISmartDataVisualizationProps extends ISmartDataVisualizationWebPartProps {
