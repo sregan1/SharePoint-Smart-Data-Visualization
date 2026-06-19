@@ -145,8 +145,6 @@ export default class SmartDataVisualizationWebPart
         colorByColumn: p.colorByColumn || '',
         tooltipColumns: p.tooltipColumns || '',
         bookmarks: p.bookmarks || '',
-        // UI mode
-        showAdvancedOptions: p.showAdvancedOptions || false,
         // Axes (advanced)
         logScaleX: p.logScaleX || false,
         stepLine: p.stepLine || false,
@@ -209,7 +207,7 @@ export default class SmartDataVisualizationWebPart
   // Fields whose value drives the visibility or disabled state of other pane
   // fields — the pane must rebuild for those states to update live.
   private static readonly PANE_STRUCTURE_FIELDS = [
-    'showAdvancedOptions', 'chartType', 'showLegend', 'trendline', 'referenceLineType',
+    'chartType', 'showLegend', 'trendline', 'referenceLineType',
     'errorBarType', 'stepLine',
   ];
 
@@ -221,7 +219,6 @@ export default class SmartDataVisualizationWebPart
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    const advanced = !!this.properties.showAdvancedOptions;
     const currentType = this.properties.chartType || 'bar';
 
     const chartTypes: IPropertyPaneDropdownOption[] = [
@@ -306,11 +303,12 @@ export default class SmartDataVisualizationWebPart
           label: strings.ShowLegendFieldLabel,
           checked: this.properties.showLegend !== false,
         }),
-        PropertyPaneToggle('stacked', {
-          label: strings.StackedFieldLabel,
-          checked: this.properties.stacked || false,
-          disabled: ['bar', 'horizontalBar', 'line', 'area'].indexOf(currentType) < 0,
-        }),
+        ...(['bar', 'horizontalBar', 'line', 'area'].indexOf(currentType) >= 0 ? [
+          PropertyPaneToggle('stacked', {
+            label: strings.StackedFieldLabel,
+            checked: this.properties.stacked || false,
+          }),
+        ] : []),
         PropertyPaneToggle('showDataTable', {
           label: strings.ShowDataTableFieldLabel,
           checked: this.properties.showDataTable || false,
@@ -319,14 +317,16 @@ export default class SmartDataVisualizationWebPart
           label: strings.ShowExportBarFieldLabel,
           checked: this.properties.showExportBar !== false,
         }),
-        PropertyPaneTextField('xAxisLabel', {
-          label: strings.XAxisLabelFieldLabel,
-          placeholder: strings.XAxisPlaceholder,
-        }),
-        PropertyPaneTextField('yAxisLabel', {
-          label: strings.YAxisLabelFieldLabel,
-          placeholder: strings.YAxisPlaceholder,
-        }),
+        ...(['pie', 'doughnut', 'kpi', 'treemap', 'heatmap'].indexOf(currentType) < 0 ? [
+          PropertyPaneTextField('xAxisLabel', {
+            label: strings.XAxisLabelFieldLabel,
+            placeholder: strings.XAxisPlaceholder,
+          }),
+          PropertyPaneTextField('yAxisLabel', {
+            label: strings.YAxisLabelFieldLabel,
+            placeholder: strings.YAxisPlaceholder,
+          }),
+        ] : []),
         ...(currentType === 'histogram' ? [
           PropertyPaneSlider('histogramBins', {
             label: strings.HistogramBinsFieldLabel,
@@ -350,33 +350,11 @@ export default class SmartDataVisualizationWebPart
       ],
     };
 
-    const advancedToggleGroup = {
-      groupName: strings.AdvancedToggleGroupName,
-      groupFields: [
-        PropertyPaneToggle('showAdvancedOptions', {
-          label: strings.ShowAdvancedOptionsFieldLabel,
-          checked: advanced,
-        }),
-      ],
-    };
-
-    // Simple mode (the default): one page with just the essentials
-    if (!advanced) {
-      return {
-        pages: [
-          {
-            header: { description: strings.PropertyPaneDescription },
-            groups: [headerGroup, chartSettingsGroup, colorsGroup, advancedToggleGroup],
-          },
-        ],
-      };
-    }
-
     return {
       pages: [
         {
           header: { description: strings.PropertyPaneDescription },
-          groups: [headerGroup, chartSettingsGroup, advancedToggleGroup],
+          groups: [headerGroup, chartSettingsGroup],
         },
         {
           header: { description: strings.AppearancePageDescription },

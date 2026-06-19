@@ -481,9 +481,10 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     title: { display: !!yAxisLabel, text: yAxisLabel, color: textColor },
   };
 
+  const logScaleXApplies = !!logScaleX && ['scatter', 'bubble', 'histogram'].indexOf(chartType) >= 0;
   const xAxisConfig: any = {
     stacked,
-    type: logScaleX ? 'logarithmic' : (xIsTime ? 'time' : undefined),
+    type: logScaleXApplies ? 'logarithmic' : (xIsTime ? 'time' : undefined),
     grid: { display: showGridLines, color: gridColor },
     title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
     ticks: {

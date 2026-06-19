@@ -646,7 +646,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   chartType={chartType}
                   seriesColors={seriesColors}
                   seriesTypes={state.seriesTypes}
-                  showAdvanced={props.showAdvancedOptions}
+                  showAdvanced={true}
                   onChange={handleColumnConfigChange}
                   onSeriesColorsChange={handleSeriesColorsChange}
                   onSeriesTypesChange={handleSeriesTypesChange}
@@ -662,11 +662,11 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   filterValue={state.filterValue}
                   groupByColumn={state.groupByColumn}
                   aggregation={state.aggregation}
-                  showAdvanced={props.showAdvancedOptions}
+                  showAdvanced={true}
                   onChange={handleDataControlsChange}
                 />
               )}
-              {hasData && columns.length > 0 && props.showAdvancedOptions && (
+              {hasData && columns.length > 0 && (
                 <AdvancedOptions
                   columns={columns}
                   chartType={chartType}

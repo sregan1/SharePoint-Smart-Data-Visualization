@@ -43,8 +43,6 @@ declare interface ISmartDataVisualizationWebPartStrings {
   HistogramBinsFieldLabel: string;
   AppearancePageDescription: string;
   AdvancedPageDescription: string;
-  AdvancedToggleGroupName: string;
-  ShowAdvancedOptionsFieldLabel: string;
   // Legend position options
   LegendTopLabel: string;
   LegendBottomLabel: string;

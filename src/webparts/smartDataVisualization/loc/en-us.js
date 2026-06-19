@@ -44,8 +44,6 @@ define([], function() {
     "HistogramBinsFieldLabel": "Histogram Bins",
     "AppearancePageDescription": "Colors, labels, and axes",
     "AdvancedPageDescription": "Analytics, reference lines, interactivity, and data refresh",
-    "AdvancedToggleGroupName": "Advanced",
-    "ShowAdvancedOptionsFieldLabel": "Show Advanced Options",
     // Legend position options
     "LegendTopLabel": "Top",
     "LegendBottomLabel": "Bottom",
