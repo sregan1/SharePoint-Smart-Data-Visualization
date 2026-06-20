@@ -7,27 +7,26 @@ This guide walks through every feature of the Smart Data Visualization web part 
 ## Table of Contents
 
 1. [Adding the Web Part to a Page](#1-adding-the-web-part-to-a-page)
-2. [Simple vs. Advanced Mode](#2-simple-vs-advanced-mode)
-3. [Loading Data](#3-loading-data)
+2. [Loading Data](#2-loading-data)
    - [Upload File (CSV or Excel)](#upload-file-csv-or-excel)
    - [SharePoint List](#sharepoint-list)
    - [SharePoint File](#sharepoint-file)
    - [REST API](#rest-api)
    - [Microsoft Graph](#microsoft-graph)
-4. [Mapping Columns](#4-mapping-columns)
-5. [Data Controls — Sort, Filter, Group](#5-data-controls--sort-filter-group)
-6. [Advanced Options Panel](#6-advanced-options-panel)
-7. [Choosing a Chart Type](#7-choosing-a-chart-type)
-8. [Chart Settings (Property Pane)](#8-chart-settings-property-pane)
-9. [Analytics — Trendlines, Forecast, Reference Lines](#9-analytics--trendlines-forecast-reference-lines)
-10. [Conditional Formatting](#10-conditional-formatting)
-11. [Interactive Features for Page Viewers](#11-interactive-features-for-page-viewers)
-12. [Web Part Header](#12-web-part-header)
-13. [Viewing the Data Table](#13-viewing-the-data-table)
-14. [Exporting](#14-exporting)
-15. [Sample Data Quick-Start](#15-sample-data-quick-start)
-16. [Chart Type Reference](#16-chart-type-reference)
-17. [Troubleshooting](#17-troubleshooting)
+3. [Mapping Columns](#3-mapping-columns)
+4. [Data Controls — Sort, Filter, Group](#4-data-controls--sort-filter-group)
+5. [Advanced Options Panel](#5-advanced-options-panel)
+6. [Choosing a Chart Type](#6-choosing-a-chart-type)
+7. [Chart Settings (Property Pane)](#7-chart-settings-property-pane)
+8. [Analytics — Trendlines, Forecast, Reference Lines](#8-analytics--trendlines-forecast-reference-lines)
+9. [Conditional Formatting](#9-conditional-formatting)
+10. [Interactive Features for Page Viewers](#10-interactive-features-for-page-viewers)
+11. [Web Part Header](#11-web-part-header)
+12. [Viewing the Data Table](#12-viewing-the-data-table)
+13. [Exporting](#13-exporting)
+14. [Sample Data Quick-Start](#14-sample-data-quick-start)
+15. [Chart Type Reference](#15-chart-type-reference)
+16. [Troubleshooting](#16-troubleshooting)
 
 ---
 
@@ -39,27 +38,11 @@ This guide walks through every feature of the Smart Data Visualization web part 
 4. Search for **Smart Data Visualization** and click it.
 5. The web part appears in edit mode, showing the data source panel.
 
-> **Tip:** The data source panel and column mapper are only visible when the page is in **Edit** mode. In View mode, page visitors see the chart plus any viewer features you enable (filters, bookmarks, drill-down — see [section 11](#11-interactive-features-for-page-viewers)).
+> **Tip:** The data source panel and column mapper are only visible when the page is in **Edit** mode. In View mode, page visitors see the chart plus any viewer features you enable (filters, bookmarks, drill-down — see [section 10](#10-interactive-features-for-page-viewers)).
 
 ---
 
-## 2. Simple vs. Advanced Mode
-
-The web part starts in **simple mode**, designed for the most common case: one chart, one data source, minimal settings.
-
-| | Simple mode (default) | Advanced mode |
-|---|---|---|
-| Property pane | One page: Header, Chart Settings, Colors | Three pages: Chart, Appearance, Advanced |
-| Chart types | All 15 types always available (grouped) | All 15 types always available (grouped) |
-| Inline editor | Data Source, Column Mapping, Data Controls (sort/filter/limit) | Adds group-by aggregation, per-series chart types, and the Advanced Options panel |
-
-To switch: open the property pane and flip **Show Advanced Options** (in the **Advanced** group at the bottom of the first page).
-
-> **Nothing breaks when you switch back.** Turning the toggle off hides the configuration controls, but any advanced behavior you already configured — trendlines, drill-down, viewer filters — keeps working on the published page.
-
----
-
-## 3. Loading Data
+## 2. Loading Data
 
 The data source panel shows the source types at the top. Click the one that matches your data and fill in the fields.
 
@@ -160,7 +143,7 @@ Use this to load data from any REST API endpoint that returns JSON.
 URL: https://contoso.sharepoint.com/sites/mysite/_api/web/lists/getbytitle('Sales')/items
 ```
 
-> **Caching:** With Advanced Options on, the **Cache API Results** setting (property pane → Advanced page → Data & Refresh) keeps the response in the browser session for N minutes, so a page with several charts doesn't refetch on every visit. The view-mode **↻ Refresh Data** button always bypasses the cache.
+> **Caching:** The **Cache API Results** setting (property pane → Advanced page → Data & Refresh) keeps the response in the browser session for N minutes, so a page with several charts doesn't refetch on every visit. The view-mode **↻ Refresh Data** button always bypasses the cache.
 
 > **CORS:** If you see a CORS error, the API server must include the appropriate `Access-Control-Allow-Origin` headers. The SharePoint REST API already supports this for same-tenant requests.
 
@@ -182,7 +165,7 @@ Use this to chart data from Microsoft Graph — group memberships, usage reports
 
 ---
 
-## 4. Mapping Columns
+## 3. Mapping Columns
 
 After data loads successfully, the **Column Mapping** panel appears below the data source panel.
 
@@ -195,7 +178,7 @@ The fields shown depend on the chart type selected in the property pane.
 | **X Axis Column** | The category or time label (e.g., Month, Quarter, Product) |
 | **Y Axis Column(s)** | One or more numeric columns to plot (check each one you want) |
 
-With Advanced Options on, each checked Y column also gets a **Default / Bar / Line** dropdown — use it to build combo charts (e.g., revenue bars with a target line).
+Each checked Y column also gets a **Default / Bar / Line** dropdown — use it to build combo charts (e.g., revenue bars with a target line).
 
 ### For Scatter and Bubble charts
 
@@ -223,6 +206,8 @@ With Advanced Options on, each checked Y column also gets a **Default / Bar / Li
 | **Histogram** | Column to Bin (numeric) only |
 | **Waterfall** | Category Column + Value Column |
 | **Box Plot** | Category Column + Value Column |
+| **Violin Plot** | Category Column + Value Column |
+| **Before-After Plot** | Category Column (optional) + exactly 2 Y Columns (before and after) |
 | **Treemap** | Group / Label Column + Value Column (tile size) |
 | **Heatmap** | Column (X) Category + Row (Y) Category + Value Column |
 
@@ -230,7 +215,7 @@ With Advanced Options on, each checked Y column also gets a **Default / Bar / Li
 
 ---
 
-## 5. Data Controls — Sort, Filter, Group
+## 4. Data Controls — Sort, Filter, Group
 
 The **Data Controls** panel (below Column Mapping) shapes the data before it reaches the chart:
 
@@ -239,10 +224,8 @@ The **Data Controls** panel (below Column Mapping) shapes the data before it rea
 | **Sort by Column / Direction** | Order the rows ascending or descending by any column |
 | **Row Limit** | Chart only the first N rows after sorting (0 = all) — great for "Top 10" charts |
 | **Filter Column / contains** | Keep only rows where a column contains the typed text |
-| **Group by Column** † | Collapse rows into one per category |
-| **Aggregation** † | How grouped numeric values combine: Sum, Average, Count, Min, Max |
-
-† Visible with Advanced Options on.
+| **Group by Column** | Collapse rows into one per category |
+| **Aggregation** | How grouped numeric values combine: Sum, Average, Count, Min, Max |
 
 **Aggregation example:** a SharePoint task list with one row per task can be charted as *task count per assignee* by grouping by `AssignedTo` with aggregation `Count`, then mapping X = `AssignedTo`, Y = `Count`. Sum/Average/Min/Max apply to every numeric column per group; Count produces a single `Count` column.
 
@@ -250,9 +233,9 @@ The pipeline order is: filter → group/aggregate → sort → row limit.
 
 ---
 
-## 6. Advanced Options Panel
+## 5. Advanced Options Panel
 
-With Advanced Options on, a collapsed **▼ Advanced Options** button appears below Data Controls.
+The collapsed **▼ Advanced Options** section appears below Data Controls when data is loaded.
 
 ![Advanced Options panel — drill hierarchy, tooltip columns, and bookmarks](screenshots/feature-advanced-options.png)
 
@@ -281,15 +264,15 @@ Save the current view — filters, sorting, grouping, and column mapping — und
 
 1. Type a name (e.g., `Top 10 by Region`) and click **Save Current View**.
 2. Apply or delete saved bookmarks from the list.
-3. Page viewers get a **— Apply a bookmark —** dropdown above the chart (see [section 11](#11-interactive-features-for-page-viewers)).
+3. Page viewers get a **— Apply a bookmark —** dropdown above the chart (see [section 10](#10-interactive-features-for-page-viewers)).
 
 Applying a bookmark changes the view without altering the saved page configuration.
 
 ---
 
-## 7. Choosing a Chart Type
+## 6. Choosing a Chart Type
 
-Open the **property pane** by clicking the pencil/settings icon on the web part while in Edit mode, then pick from the **Chart Type** dropdown. All 15 chart types are always visible, organized into two groups.
+Open the **property pane** by clicking the pencil/settings icon on the web part while in Edit mode, then pick from the **Chart Type** dropdown. All 17 chart types are always visible, organized into two groups.
 
 **Standard Charts:**
 
@@ -313,22 +296,24 @@ Open the **property pane** by clicking the pencil/settings icon on the web part 
 | Histogram | Distribution of a numeric column (configurable bins) |
 | Waterfall Chart | Cumulative gains/losses — monthly P&L, budget bridges |
 | Box Plot | Spread and outliers of values within each category |
+| Violin Plot | Full distribution shape and density per category — complements Box Plot |
+| Before-After Plot | Paired change — one "before" and one "after" Y column connected per row |
 | Treemap | Proportions as area tiles — good for many categories |
 | Heatmap | Intensity across two category dimensions (e.g., weekday × hour) |
 
 ---
 
-## 8. Chart Settings (Property Pane)
+## 7. Chart Settings (Property Pane)
 
-In simple mode all settings are on one page. With Advanced Options on, they're organized into three pages — use the **Back / Next** links at the bottom of the pane.
+Settings are organized into three pages — use the **Back / Next** links at the bottom of the pane. Only options applicable to the selected chart type are shown on each page.
 
 ### Page 1 — Chart
 
 | Setting | Description |
 |---|---|
-| **Show Header / Header Text** | Page-level title above the chart (see [section 12](#12-web-part-header)) |
+| **Show Header / Header Text** | Page-level title above the chart (see [section 11](#11-web-part-header)) |
 | **Chart Title** | Text displayed inside the chart canvas |
-| **Chart Type** | The visualization style (see [section 7](#7-choosing-a-chart-type)) |
+| **Chart Type** | The visualization style (see [section 6](#6-choosing-a-chart-type)) |
 | **Legend Position** | Bottom, Top, Left, or Right |
 | **Chart Height** | Height in pixels (default 400) |
 | **Show Legend** | Toggle the chart legend |
@@ -337,9 +322,8 @@ In simple mode all settings are on one page. With Advanced Options on, they're o
 | **Show Export Bar** | PNG / JPEG / CSV / Excel buttons below the chart |
 | **X / Y Axis Label** | Axis captions |
 | **Histogram Bins** | Number of bins (Histogram only) |
-| **Show Advanced Options** | The master switch for everything advanced |
 
-### Page 2 — Appearance (advanced)
+### Page 2 — Appearance
 
 | Setting | Description |
 |---|---|
@@ -354,11 +338,11 @@ In simple mode all settings are on one page. With Advanced Options on, they're o
 | **X Label Rotation** | Rotate long category labels |
 | **X Axis Type** | **Auto-detect** (default), **Category**, or **Time (dates)** — Time plots date values on a true chronological axis |
 
-### Page 3 — Advanced (advanced)
+### Page 3 — Advanced
 
 ![Property pane — Advanced page with Analytics, Interactivity, and Data & Refresh groups](screenshots/settings-advanced.png)
 
-Covered in detail in sections [9](#9-analytics--trendlines-forecast-reference-lines), [10](#10-conditional-formatting), and [11](#11-interactive-features-for-page-viewers), plus:
+Covered in detail in sections [8](#8-analytics--trendlines-forecast-reference-lines), [9](#9-conditional-formatting), and [10](#10-interactive-features-for-page-viewers), plus:
 
 | Setting | Description |
 |---|---|
@@ -369,7 +353,7 @@ All settings are saved with the page automatically.
 
 ---
 
-## 9. Analytics — Trendlines, Forecast, Reference Lines
+## 8. Analytics — Trendlines, Forecast, Reference Lines
 
 *(Property pane → Advanced page → Analytics and Reference Line groups)*
 
@@ -377,7 +361,7 @@ All settings are saved with the page automatically.
 
 | Option | Description |
 |---|---|
-| **Linear** | A least-squares regression line per Y series, drawn dashed |
+| **Linear** | A least-squares regression line per Y series, drawn dashed. The legend shows the R² coefficient (e.g. *Revenue (trend) (R²=0.94)*) so you can see how well the line fits. |
 | **Moving Average** | A smoothed dashed line; set the **Moving Average Window** (2–20 points) |
 
 ### Forecast
@@ -396,7 +380,7 @@ The line is labeled with its value in the legend, and its color is configurable.
 
 ---
 
-## 10. Conditional Formatting
+## 9. Conditional Formatting
 
 *(Property pane → Advanced page → Conditional Formatting)*
 
@@ -410,7 +394,7 @@ Bars crossing the threshold are recolored; on line/area charts the data points a
 
 ---
 
-## 11. Interactive Features for Page Viewers
+## 10. Interactive Features for Page Viewers
 
 These features change what *visitors* can do with the published page. All are off by default.
 
@@ -450,7 +434,7 @@ The web part publishes three dynamic data properties — **Selected category**, 
 
 ---
 
-## 12. Web Part Header
+## 11. Web Part Header
 
 The web part can display an optional title above the chart, styled like a standard SharePoint web part header.
 
@@ -465,7 +449,7 @@ The header appears as a prominent title line above the chart in both Edit and Vi
 
 ---
 
-## 13. Viewing the Data Table
+## 12. Viewing the Data Table
 
 Enable **Show Data Table** in the property pane to display a scrollable, paginated table of all loaded data below the chart.
 
@@ -477,7 +461,7 @@ Enable **Show Data Table** in the property pane to display a scrollable, paginat
 
 ---
 
-## 14. Exporting
+## 13. Exporting
 
 When **Show Export Bar** is on, four buttons appear below the chart:
 
@@ -491,7 +475,7 @@ Cell values that could be interpreted as formulas are escaped automatically, so 
 
 ---
 
-## 15. Sample Data Quick-Start
+## 14. Sample Data Quick-Start
 
 The following examples let you try the chart types immediately using the included sample files.
 
@@ -578,7 +562,7 @@ The following examples let you try the chart types immediately using the include
 | **Box Plot** | `study-hours-scores.csv` | Category: `Study Hours`, Value: `Test Score` |
 | **Treemap** | `market-share.csv` | Group: `Product`, Value: `MarketShare` |
 
-No sample file ships with two category dimensions for the **Heatmap** — try it with your own data (e.g., weekday × hour, region × product) where each row has two categories and a numeric value.
+No sample file ships with two category dimensions for the **Heatmap** — try it with your own data (e.g., weekday × hour, region × product) where each row has two categories and a numeric value. The **Violin Plot** works with the same files as Box Plot. The **Before-After Plot** requires any dataset with two numeric columns representing a before and after measurement.
 
 | | |
 |---|---|
@@ -591,7 +575,7 @@ No sample file ships with two category dimensions for the **Heatmap** — try it
 
 ---
 
-## 16. Chart Type Reference
+## 15. Chart Type Reference
 
 ### Stacked mode
 
@@ -613,7 +597,7 @@ Seven built-in palettes are available in the property pane. Choose one that fits
 
 ### Multi-series and combo charts
 
-Bar, Line, Area, and Radar charts support multiple Y columns — each becomes a series with its own color. With Advanced Options on, Bar/Line/Area series can individually render as bars or lines for combo charts.
+Bar, Line, Area, and Radar charts support multiple Y columns — each becomes a series with its own color. Bar/Line/Area series can individually render as bars or lines for combo charts — use the **Default / Bar / Line** dropdown next to each checked Y column in the Column Mapping panel.
 
 ### Pie / Doughnut best practices
 
@@ -627,15 +611,19 @@ The **Size / Radius column** values are square-rooted internally to keep proport
 
 ### KPI Tile aggregation
 
-The KPI Tile aggregates its Value column using the **Aggregation** setting from Data Controls (default: Sum). Set Aggregation to `Average` for a mean KPI, `Count` for a row count, and so on. The row count is always shown beneath the number.
+The KPI Tile aggregates its Value column using the **Aggregation** setting from Data Controls (default: Sum). Set Aggregation to `Average` for a mean KPI, `Count` for a row count, and so on. The sub-label beneath the headline shows the column name, aggregation method, and row count — e.g. *Revenue • SUM • 12 rows*.
+
+### Violin Plot vs. Box Plot
+
+Both chart types show value distribution per category. Box Plot shows the five-number summary (min, Q1, median, Q3, max) plus outliers. Violin Plot adds the full density curve — you can see whether values cluster at one end, are bimodal, or are uniformly spread. Use them together when the shape of the distribution matters.
 
 ### Heatmap color intensity
 
-Cell color intensity scales with the absolute value relative to the largest value in the data — the strongest cell is fully saturated, near-zero cells are nearly transparent.
+Cell color intensity scales with the absolute value relative to the largest value in the data. When the data contains both positive and negative values, the heatmap uses a diverging scale — blue for negative, red for positive — so the direction of the value is visible from the color.
 
 ---
 
-## 17. Troubleshooting
+## 16. Troubleshooting
 
 ### "No data loaded yet"
 
@@ -683,12 +671,8 @@ Blank or non-numeric cells render as gaps rather than zeros — this is intentio
 
 ### Data is loaded but the chart says "select column mappings"
 
-Scroll down to the **Column Mapping** panel and select the required columns for the current chart type (see [section 4](#4-mapping-columns)).
-
-### I can't find a setting that used to be there
-
-Turn on **Show Advanced Options** (property pane, bottom of the first page). Simple mode hides advanced settings, but anything you previously configured continues to work.
+Scroll down to the **Column Mapping** panel and select the required columns for the current chart type (see [section 3](#3-mapping-columns)).
 
 ### Drill-down clicks don't do anything
 
-Define at least one drill level in **Advanced Options → Drill Level 1** while editing. Note that Histogram, Box Plot, Treemap, and Heatmap charts don't support click-to-drill.
+Define at least one drill level in **Advanced Options → Drill Level 1** while editing. Note that Histogram, Box Plot, Violin, Treemap, and Heatmap charts don't support click-to-drill.

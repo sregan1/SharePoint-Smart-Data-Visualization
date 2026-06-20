@@ -105,6 +105,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   Y2ColumnsFieldLabel: string;
   Y2ColumnsPlaceholder: string;
   Y2AxisLabelFieldLabel: string;
+  LogScaleY2FieldLabel: string;
   // Error bars
   ErrorBarsGroupName: string;
   ErrorBarTypeFieldLabel: string;
@@ -118,6 +119,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   SignificancePairsFieldLabel: string;
   SignificancePairsPlaceholder: string;
   SignificancePairsHelp: string;
+  BeforeAfterColumnsError: string;
   // Interactivity
   InteractivityGroupName: string;
   ShowViewerFiltersFieldLabel: string;

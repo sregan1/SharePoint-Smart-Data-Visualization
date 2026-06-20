@@ -106,6 +106,7 @@ define([], function() {
     "Y2ColumnsFieldLabel": "Right-axis series (comma-separated column names)",
     "Y2ColumnsPlaceholder": "e.g. Margin,Growth",
     "Y2AxisLabelFieldLabel": "Right axis label",
+    "LogScaleY2FieldLabel": "Log Scale (Right Axis)",
     // Error bars group
     "ErrorBarsGroupName": "Error Bars",
     "ErrorBarTypeFieldLabel": "Error Bar Type",
@@ -117,12 +118,13 @@ define([], function() {
     // Significance annotations group
     "SignificanceGroupName": "Significance Brackets",
     "SignificancePairsFieldLabel": "Bracket pairs",
-    "SignificancePairsPlaceholder": "[{\"col1\":\"A\",\"col2\":\"B\",\"label\":\"*\"}]",
-    "SignificancePairsHelp": "JSON array: [{\"col1\":\"Category A\",\"col2\":\"Category B\",\"label\":\"*\"}]",
+    "SignificancePairsPlaceholder": "A,B,*\nC,D,**",
+    "SignificancePairsHelp": "One bracket per line: col1,col2,label  — e.g. GroupA,GroupB,*  or  GroupA,GroupB,p<0.05  (JSON array also accepted)",
+    "BeforeAfterColumnsError": "Before-After chart requires exactly 2 Y columns — one for Before values and one for After values.",
     // Interactivity
     "InteractivityGroupName": "Interactivity",
     "ShowViewerFiltersFieldLabel": "Show Filters to Viewers",
-    "DetailsOnDemandFieldLabel": "Details on Demand (click chart for rows)",
+    "DetailsOnDemandFieldLabel": "Show data rows on click",
     "ShowDataPointsFieldLabel": "Overlay Data Points on Bars",
     "ShowBubbleSizeLegendFieldLabel": "Show Bubble Size Legend",
     "ViewerFilterLabel": "Filter:",
@@ -131,7 +133,7 @@ define([], function() {
     "DrillAllLabel": "All",
     "DetailsChipLabel": "Details: {0} ({1} rows)",
     // KPI
-    "KpiSubLabel": "{0} • {1} rows",
+    "KpiSubLabel": "{0} • {1} • {2} rows",
     // Conditional formatting group
     "ConditionalGroupName": "Conditional Formatting",
     "ThresholdValueFieldLabel": "Threshold Value",

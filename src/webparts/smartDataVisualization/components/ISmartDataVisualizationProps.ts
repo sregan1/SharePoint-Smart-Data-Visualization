@@ -93,6 +93,7 @@ export interface ISmartDataVisualizationWebPartProps {
   bookmarks: string;
   // Axes (advanced)
   logScaleX: boolean;
+  logScaleY2: boolean;
   stepLine: boolean;
   // Dual Y axis
   y2Columns: string;

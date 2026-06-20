@@ -3,7 +3,7 @@
   "solution": {
     "name": "Smart Data Visualization",
     "id": "a8f3c2e1-b5d7-4f6e-9a2c-1d8e3f5b7c9a",
-    "version": "1.1.1.0",
+    "version": "1.2.0.0",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "developer": {
@@ -18,7 +18,7 @@
         "default": "Visualize data from multiple sources with various chart types"
       },
       "longDescription": {
-        "default": "Smart Data Visualization web part for SharePoint - supports CSV, Excel, SharePoint lists, REST APIs, Microsoft Graph, and more with 15 chart types, drill-down, bookmarks, and analytics. No API permissions are declared — the Microsoft Graph data source requires a tenant admin to manually grant Graph scopes via API access; all other data sources work with no permissions."
+        "default": "Smart Data Visualization web part for SharePoint - supports CSV, Excel, SharePoint lists, REST APIs, Microsoft Graph, and more with 17 chart types, drill-down, bookmarks, and analytics. No API permissions are declared — the Microsoft Graph data source requires a tenant admin to manually grant Graph scopes via API access; all other data sources work with no permissions."
       },
       "screenshotPaths": [],
       "videoUrl": "",

@@ -147,6 +147,7 @@ export default class SmartDataVisualizationWebPart
         bookmarks: p.bookmarks || '',
         // Axes (advanced)
         logScaleX: p.logScaleX || false,
+        logScaleY2: p.logScaleY2 || false,
         stepLine: p.stepLine || false,
         // Dual Y axis
         y2Columns: p.y2Columns || '',
@@ -522,6 +523,10 @@ export default class SmartDataVisualizationWebPart
                   label: strings.Y2AxisLabelFieldLabel,
                   value: this.properties.y2AxisLabel || '',
                 }),
+                PropertyPaneToggle('logScaleY2', {
+                  label: strings.LogScaleY2FieldLabel,
+                  checked: this.properties.logScaleY2 || false,
+                }),
               ],
             },
             {
@@ -618,6 +623,7 @@ export default class SmartDataVisualizationWebPart
                   max: 60,
                   step: 5,
                   value: this.properties.refreshIntervalMinutes || 0,
+                  disabled: (this.properties.dataSourceType || 'upload') === 'upload',
                 }),
                 PropertyPaneSlider('cacheMinutes', {
                   label: strings.CacheMinutesFieldLabel,

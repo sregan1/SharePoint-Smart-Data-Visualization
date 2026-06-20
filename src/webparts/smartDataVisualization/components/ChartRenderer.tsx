@@ -113,6 +113,7 @@ interface IChartRendererProps {
   aggregation: string;
   onItemSelected?: (selection: IChartSelection) => void;
   logScaleX?: boolean;
+  logScaleY2?: boolean;
   stepLine?: boolean;
   y2Columns?: string;
   y2AxisLabel?: string;
@@ -165,6 +166,19 @@ const sanitizeCsvValue = (v: unknown): unknown =>
 const toTimestamp = (v: unknown): number | null => {
   const t = Date.parse(String(v ?? ''));
   return isNaN(t) ? null : t;
+};
+
+// R² (coefficient of determination) between actual and fitted values.
+const computeR2 = (actual: (number | null)[], fitted: (number | null)[]): number | null => {
+  const pairs = actual
+    .map((v, i) => [v, fitted[i]] as [number | null, number | null])
+    .filter(([v, f]) => v !== null && f !== null) as [number, number][];
+  if (pairs.length < 2) return null;
+  const meanY = pairs.reduce((s, [v]) => s + v, 0) / pairs.length;
+  const ssTot = pairs.reduce((s, [v]) => s + (v - meanY) ** 2, 0);
+  if (ssTot === 0) return 1;
+  const ssRes = pairs.reduce((s, [v, f]) => s + (v - f) ** 2, 0);
+  return Math.max(0, 1 - ssRes / ssTot);
 };
 
 // Least-squares line over the series index, skipping gaps.
@@ -265,6 +279,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     aggregation,
     onItemSelected,
     logScaleX,
+    logScaleY2,
     stepLine,
     y2Columns,
     y2AxisLabel,
@@ -353,6 +368,15 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     }
   }
 
+  // Before-after requires exactly 2 Y columns (before and after values)
+  if (chartType === 'beforeAfter' && validYColumns.length < 2) {
+    return (
+      <div className={styles.noDataMessage}>
+        {strings.BeforeAfterColumnsError}
+      </div>
+    );
+  }
+
   // KPI tile — a single aggregated number, no canvas involved
   if (chartType === 'kpi') {
     const textColorKpi = isDarkTheme ? '#f3f2f1' : '#323130';
@@ -383,7 +407,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
           >
             {formatValue(value, valuePrefix, valueSuffix, valueDecimals, abbreviateNumbers)}
           </div>
-          <div className={styles.kpiSubLabel}>{fmt(strings.KpiSubLabel, validYColumns[0], data.length)}</div>
+          <div className={styles.kpiSubLabel}>{fmt(strings.KpiSubLabel, validYColumns[0], agg.toUpperCase(), data.length)}</div>
         </div>
         {showExportBar && (
           <ExportBar
@@ -482,9 +506,10 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   };
 
   const logScaleXApplies = !!logScaleX && ['scatter', 'bubble', 'histogram'].indexOf(chartType) >= 0;
+  const numericXCharts = ['scatter', 'bubble', 'histogram'];
   const xAxisConfig: any = {
     stacked,
-    type: logScaleXApplies ? 'logarithmic' : (xIsTime ? 'time' : undefined),
+    type: logScaleXApplies ? 'logarithmic' : xIsTime ? 'time' : numericXCharts.indexOf(chartType) < 0 ? 'category' : undefined,
     grid: { display: showGridLines, color: gridColor },
     title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
     ticks: {
@@ -513,7 +538,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
       y: yAxisConfig,
       ...(hasDualAxis ? {
         y1: {
-          type: logScale ? 'logarithmic' : 'linear',
+          type: logScaleY2 ? 'logarithmic' : 'linear',
           position: 'right' as const,
           grid: { display: false },
           ticks: { color: textColor },
@@ -617,8 +642,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         const trendValues = trendline === 'linear'
           ? linearTrend(values, forecastExtra)
           : movingAverage(values, trendWindow || 3);
+        const r2 = trendline === 'linear' ? computeR2(values, trendValues) : null;
+        const trendLabel = r2 !== null
+          ? `${col}${strings.TrendSuffix} (R²=${r2.toFixed(2)})`
+          : `${col}${strings.TrendSuffix}`;
         datasets.push({
-          label: `${col}${strings.TrendSuffix}`,
+          label: trendLabel,
           type: 'line',
           data: xIsTime ? toPoints(trendValues.slice(0, data.length)) : trendValues,
           borderColor: colors[i],
@@ -777,13 +806,30 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
 
   const buildPieData = () => {
     const pieLabel = labelColumn || xColumn;
-    const pieColors = resolveColors(colorPalette, seriesColors, data.length);
+    const threshold = parseNumOrUndefined(thresholdValue);
+    // Exclude rows with null Y values — a missing value is not a zero-size slice
+    const validRows = data.filter(row => numOrNull(row[validYColumns[0]]) !== null);
+    const pieColors = resolveColors(colorPalette, seriesColors, validRows.length);
     return {
-      labels: data.map(row => String(row[pieLabel] ?? '')),
+      labels: validRows.map(row => String(row[pieLabel] ?? '')),
       datasets: [{
-        data: data.map(row => numOrNull(row[validYColumns[0]]) ?? 0),
-        backgroundColor: pieColors.map(c => `${c}cc`),
-        borderColor: pieColors,
+        data: validRows.map(row => numOrNull(row[validYColumns[0]]) as number),
+        backgroundColor: validRows.map((row, i) => {
+          if (threshold !== undefined) {
+            const v = numOrNull(row[validYColumns[0]]) as number;
+            const breach = thresholdDirection === 'above' ? v > threshold : v < threshold;
+            if (breach) return `${thresholdColor || '#d13438'}cc`;
+          }
+          return `${pieColors[i]}cc`;
+        }),
+        borderColor: validRows.map((row, i) => {
+          if (threshold !== undefined) {
+            const v = numOrNull(row[validYColumns[0]]) as number;
+            const breach = thresholdDirection === 'above' ? v > threshold : v < threshold;
+            if (breach) return thresholdColor || '#d13438';
+          }
+          return pieColors[i];
+        }),
         borderWidth: 1,
       }],
     };
@@ -819,9 +865,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     }
     const color = colors[0];
     return {
-      labels: counts.map((_, i) =>
-        `${formatValue(min + i * width, '', '', valueDecimals, true)}–${formatValue(min + (i + 1) * width, '', '', valueDecimals, true)}`
-      ),
+      labels: counts.map((_, i) => {
+        const lo = formatValue(min + i * width, '', '', valueDecimals, true);
+        const hi = formatValue(min + (i + 1) * width, '', '', valueDecimals, true);
+        // Last bin is closed on the right (includes the max value), all others are half-open [lo, hi)
+        return i === bins - 1 ? `${lo}–${hi}` : `${lo}–<${hi}`;
+      }),
       datasets: [{
         label: xColumn,
         data: counts,
@@ -937,6 +986,9 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     }
     const maxAbs = Math.max(...points.map(p => Math.abs(p.v)), 1);
     const base = colors[0];
+    const hasNeg = points.some(p => p.v < 0);
+    const hasPos = points.some(p => p.v > 0);
+    const isDiverging = hasNeg && hasPos;
     return {
       data: {
         datasets: [{
@@ -944,6 +996,13 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
           data: points,
           backgroundColor: (ctx: any) => {
             const raw = ctx.dataset.data[ctx.dataIndex];
+            if (isDiverging) {
+              // Diverging: blue for negative, red for positive
+              const ratio = raw.v / maxAbs;
+              return ratio < 0
+                ? hexWithAlpha('#2166ac', Math.max(0.08, Math.abs(ratio)))
+                : hexWithAlpha('#d6604d', Math.max(0.08, ratio));
+            }
             return hexWithAlpha(base, Math.max(0.08, Math.abs(raw.v) / maxAbs));
           },
           borderColor: 'rgba(255, 255, 255, 0.4)',
@@ -1140,10 +1199,24 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   // Inline plugin: significance annotation brackets above bars
   const sigPairs: Array<{ col1: string; col2: string; label: string }> = (() => {
     if (!significancePairs || !significancePairs.trim()) return [];
-    try {
-      const parsed = JSON.parse(significancePairs);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+    const trimmed = significancePairs.trim();
+    // JSON array format: [{col1, col2, label}, ...]
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }
+    // Simple format: one pair per line — col1,col2,label
+    return trimmed.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        const parts = line.split(',');
+        if (parts.length < 2) return null;
+        return { col1: parts[0].trim(), col2: parts[1].trim(), label: (parts[2] || '*').trim() };
+      })
+      .filter((p): p is { col1: string; col2: string; label: string } => p !== null);
   })();
   const significancePlugin: any = sigPairs.length > 0 &&
     (chartType === 'bar' || chartType === 'horizontalBar') ? {

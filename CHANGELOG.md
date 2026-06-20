@@ -4,6 +4,38 @@ All notable changes to Smart Data Visualization are documented here.
 
 ---
 
+## [1.2.0] — 2026-06-19
+
+### Added
+
+- **2 new chart types** (17 total): Violin Plot and Before-After Plot
+  - **Violin Plot**: distribution shape and density per category rendered as a smooth mirrored density curve — complements Box Plot by showing the full distribution shape, not just quartiles
+  - **Before-After Plot**: paired dot plot connecting a "before" value to an "after" value per data row; requires exactly two Y columns
+- **Logarithmic scale (Right Axis)**: a *Log Scale (Right Axis)* toggle in the Dual Y Axis property pane group independently log-scales the secondary axis
+- **R² in linear trendline label**: the chart legend now shows the coefficient of determination for each linear trendline — e.g. *Revenue (trend) (R²=0.94)* — so fit quality is visible at a glance
+- **Significance brackets**: a new *Significance Brackets* property pane group lets you annotate statistical comparisons between bar groups; accepts newline-delimited `col1,col2,label` format or a JSON array
+
+### Changed
+
+- **Removed Simple / Advanced mode toggle**: the property pane now always shows all three pages (Chart, Appearance, Advanced). The *Show Advanced Options* toggle has been removed; all settings and inline panels (Advanced Options, Group-by aggregation, per-series chart-type overrides) are always accessible when data is loaded
+- **Property pane fields are now conditionally hidden** (not just disabled) for chart types where they don't apply:
+  - *Stacked* hidden for Pie, Doughnut, Scatter, Bubble, Radar, KPI, Histogram, Waterfall, Box Plot, Violin, Treemap, Heatmap, Before-After
+  - *X / Y Axis Labels* hidden for Pie, Doughnut, KPI, Treemap, Heatmap
+  - *Axes & Grid* accordion hidden for Pie, Doughnut, KPI, Treemap, Heatmap, Radar
+- **KPI Tile sub-label** now shows the aggregation method — e.g. *Revenue • SUM • 12 rows* — so viewers can see how the headline was computed
+- **Heatmap diverging color scale**: when data contains both negative and positive values the heatmap uses blue (`#2166ac`) for negative and red (`#d6604d`) for positive instead of a single-hue gradient
+- **Histogram bin labels**: bins now use half-open interval notation (*10–<20*, *20–30*) so each boundary belongs to exactly one bin
+- **Refresh interval slider** is now disabled when the data source is *Upload File* (auto-refresh applies to network sources only)
+- Updated hero chart image to a 2×2 composite of Bubble, Horizontal Bar, Radar, and Box Plot screenshots
+
+### Fixed
+
+- **Bar chart X axis showing 0–11 instead of category names**: Chart.js was inferring a linear scale from row indices when the axis type was left unspecified; the axis is now explicitly set to `category` for all non-numeric-axis chart types
+- **Pie / Doughnut**: rows with null or non-numeric values are now filtered before slices are rendered; threshold color overrides are now applied per-slice rather than as a single dataset color
+- **Before-After chart**: shows a clear validation message when fewer than two Y columns are selected instead of rendering a blank chart
+
+---
+
 ## [1.1.1] — 2026-06-17
 
 ### Added

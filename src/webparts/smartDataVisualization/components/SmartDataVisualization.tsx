@@ -803,6 +803,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             aggregation={effectiveAggregation}
             onItemSelected={handleItemSelected}
             logScaleX={props.logScaleX || false}
+            logScaleY2={props.logScaleY2 || false}
             stepLine={props.stepLine || false}
             y2Columns={props.y2Columns || ''}
             y2AxisLabel={props.y2AxisLabel || ''}

@@ -2,7 +2,7 @@
 
 [![Website](https://img.shields.io/badge/Website-sharepointsmartsolutions.com-blue)](https://sharepointsmartsolutions.com/smart-data-visualization) [![User Guide](https://img.shields.io/badge/User%20Guide-Read%20Now-green)](USER-GUIDE.md) [![Download](https://img.shields.io/badge/Download-Latest%20Release-CA5010?logo=github&logoColor=white)](../../releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required — 15 chart types, drill-down, bookmarks, trendlines, and click-to-filter integration, all configured through the SharePoint page editor.
+A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required — 17 chart types, drill-down, bookmarks, trendlines, and click-to-filter integration, all configured through the SharePoint page editor.
 
 ![SPFx](https://img.shields.io/badge/SPFx-1.20-0078D4?logo=microsoft&logoColor=white) ![React](https://img.shields.io/badge/React-17-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-4.7-3178C6?logo=typescript&logoColor=white) ![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?logo=chartdotjs&logoColor=white) ![PnPjs](https://img.shields.io/badge/PnPjs-3.22-0078D4)
 
@@ -12,9 +12,9 @@ A SharePoint Framework (SPFx) web part that renders interactive charts from mult
 
 ## Features
 
-### Simple by Default, Advanced on Demand
+### Adaptive Property Pane
 
-The web part starts in **simple mode** — one property pane page and a streamlined editor. Flip **Show Advanced Options** in the property pane to unlock additional pages for appearance tuning, analytics, and interactivity. Advanced features that are already configured keep working even when the toggle is off, so simplifying the UI never breaks a published chart. All 15 chart types are available in both modes.
+The property pane is organized into three focused pages — **Chart**, **Appearance**, and **Advanced** — with settings that adapt to the selected chart type. Options that don't apply to the current chart are hidden automatically, so the pane stays clear and relevant without overwhelming you. All 17 chart types are always accessible.
 
 ### Data Sources
 
@@ -45,6 +45,8 @@ The web part starts in **simple mode** — one property pane page and a streamli
 | **Histogram** | Distribution of a numeric column, with configurable bins |
 | **Waterfall** | Cumulative gains and losses (e.g. monthly P&L) |
 | **Box Plot** | Value distribution and outliers per category |
+| **Violin Plot** | Distribution shape and density per category |
+| **Before-After Plot** | Paired change from before to after values per row |
 | **Treemap** | Proportions as nested area tiles |
 | **Heatmap** | Intensity across two category dimensions |
 
@@ -179,7 +181,7 @@ gulp package-solution --ship
 
 All settings are managed through the web part property pane (click the pencil icon while the page is in Edit mode). Data source selection, column mapping, data controls, and the Advanced Options panel live **inline in the web part** while editing, because they depend on the loaded data.
 
-By default the pane shows a single page of essentials. Turning on **Show Advanced Options** (bottom of the first page) expands it to three pages — **Chart**, **Appearance**, and **Advanced** — and reveals the additional inline panels.
+The pane is organized into three pages — **Chart**, **Appearance**, and **Advanced** — navigated with the Back / Next links at the bottom. Only settings relevant to the currently selected chart type are shown; options that don't apply are hidden automatically.
 
 ### Page 1 — Chart
 
@@ -194,7 +196,7 @@ By default the pane shows a single page of essentials. Turning on **Show Advance
 
 | Setting | Default | Description |
 |---|---|---|
-| **Chart Type** | Bar (Vertical) | 15 types organized in Standard and Specialized groups |
+| **Chart Type** | Bar (Vertical) | 17 types organized in Standard and Specialized groups |
 | **Chart Title** | _(blank)_ | Title rendered inside the chart canvas |
 | **Legend Position** | Bottom | Top, Bottom, Left, or Right |
 | **Chart Height** | 400 px | Height of the chart in pixels |
@@ -209,9 +211,7 @@ By default the pane shows a single page of essentials. Turning on **Show Advance
 
 | Setting | Default | Description |
 |---|---|---|
-| **Show Advanced Options** | Off | Master switch for advanced settings and configuration panels |
-
-### Page 2 — Appearance (advanced mode)
+### Page 2 — Appearance
 
 | Setting | Default | Description |
 |---|---|---|
@@ -226,7 +226,7 @@ By default the pane shows a single page of essentials. Turning on **Show Advance
 | **X Label Rotation** | 0° | Degrees to rotate X axis labels |
 | **X Axis Type** | Auto-detect | Auto-detect / Category / Time (dates) |
 
-### Page 3 — Advanced (advanced mode)
+### Page 3 — Advanced
 
 | Setting | Default | Description |
 |---|---|---|
@@ -241,7 +241,7 @@ By default the pane shows a single page of essentials. Turning on **Show Advance
 | **Auto-Refresh Interval** | 0 (off) | Reload network sources every N minutes |
 | **Cache API Results** | 0 (off) | Cache REST/Graph responses for N minutes per session |
 
-### Inline Advanced Options panel (advanced mode, while editing)
+### Inline Advanced Options panel (while editing)
 
 | Setting | Description |
 |---|---|
@@ -323,7 +323,7 @@ smart-data-visualization/
 │           │   ├── ColumnMapper.tsx                  # Column → axis mapping, per-series colors/types
 │           │   ├── DataControls.tsx                  # Sort, filter, limit, group-by aggregation
 │           │   ├── AdvancedOptions.tsx               # Color-by, tooltips, drill hierarchy, bookmarks
-│           │   ├── ChartRenderer.tsx                 # Chart.js rendering — all 15 chart types
+│           │   ├── ChartRenderer.tsx                 # Chart.js rendering — all 17 chart types
 │           │   ├── DataTable.tsx                     # Tabular data view
 │           │   ├── ExportBar.tsx                     # PNG / JPEG / CSV / Excel export
 │           │   └── SmartDataVisualization.module.scss
@@ -363,8 +363,6 @@ smart-data-visualization/
 - **Microsoft Graph source returns 401/403** — the Graph permission request has not been approved, or your endpoint needs a scope not listed in `package-solution.json`. See [Graph API Permissions](#graph-api-permissions).
 - **"This list has 5,000 or more items…"** — SharePoint returns at most 5,000 items per request. Filter the list with a view-backed approach or aggregate the data upstream.
 - **Arrows or accented characters look garbled in an exported CSV** — fixed in 2.0; exports now include a UTF-8 BOM. Re-export with the current version.
-- **Advanced settings disappeared** — the **Show Advanced Options** toggle (bottom of property pane page 1) is off. Configured behavior keeps working; only the configuration UI hides.
-
 ---
 
 ## Limitations
