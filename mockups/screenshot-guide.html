@@ -1105,6 +1105,160 @@
     </div>
   </div>
 
+  <!-- Violin Plot (SVG) -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 16</span>
+      <span class="title">Violin Plot</span>
+      <span class="hint">study-hours-scores.csv — score distribution by study group</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Score Distribution by Study Group</span></div>
+      <div class="chart-container">
+        <svg viewBox="0 0 520 255" style="width:100%;height:auto;font-family:'Segoe UI',sans-serif;">
+          <!-- grid lines -->
+          <g stroke="#edebe9" stroke-width="1">
+            <line x1="40" y1="20" x2="500" y2="20"/>
+            <line x1="40" y1="68" x2="500" y2="68"/>
+            <line x1="40" y1="116" x2="500" y2="116"/>
+            <line x1="40" y1="164" x2="500" y2="164"/>
+            <line x1="40" y1="212" x2="500" y2="212"/>
+          </g>
+          <!-- y-axis labels -->
+          <g font-size="10" fill="#605e5c" text-anchor="end">
+            <text x="34" y="24">100</text><text x="34" y="72">75</text>
+            <text x="34" y="120">50</text><text x="34" y="168">25</text>
+            <text x="34" y="216">0</text>
+          </g>
+          <!-- Violin A (cx=110) — distribution 25–78, mode ~48 -->
+          <path d="M 110,175 C 118,162 130,148 130,128 C 130,108 118,86 110,65
+                   C 102,86 90,108 90,128 C 90,148 102,162 110,175 Z"
+                fill="#0078d430" stroke="#0078d4" stroke-width="1.5"/>
+          <rect x="104" y="110" width="12" height="36" fill="#0078d460" stroke="#0078d4" stroke-width="1"/>
+          <line x1="92" y1="128" x2="128" y2="128" stroke="#0078d4" stroke-width="2.5"/>
+          <!-- Violin B (cx=220) — wider, mode ~55 -->
+          <path d="M 220,182 C 230,168 245,150 245,122 C 245,94 230,70 220,55
+                   C 210,70 195,94 195,122 C 195,150 210,168 220,182 Z"
+                fill="#107c1030" stroke="#107c10" stroke-width="1.5"/>
+          <rect x="213" y="103" width="14" height="38" fill="#107c1060" stroke="#107c10" stroke-width="1"/>
+          <line x1="197" y1="115" x2="243" y2="115" stroke="#107c10" stroke-width="2.5"/>
+          <!-- Violin C (cx=330) — shifted higher, mode ~65 -->
+          <path d="M 330,178 C 338,163 350,144 350,115 C 350,86 338,60 330,44
+                   C 322,60 310,86 310,115 C 310,144 322,163 330,178 Z"
+                fill="#d1343830" stroke="#d13438" stroke-width="1.5"/>
+          <rect x="323" y="96" width="14" height="38" fill="#d1343860" stroke="#d13438" stroke-width="1"/>
+          <line x1="312" y1="105" x2="348" y2="105" stroke="#d13438" stroke-width="2.5"/>
+          <!-- Violin D (cx=440) — narrower, high mode ~75 -->
+          <path d="M 440,172 C 447,160 457,142 457,112 C 457,82 447,58 440,42
+                   C 433,58 423,82 423,112 C 423,142 433,160 440,172 Z"
+                fill="#ffb90030" stroke="#ca9a00" stroke-width="1.5"/>
+          <rect x="433" y="90" width="14" height="36" fill="#ffb90060" stroke="#ca9a00" stroke-width="1"/>
+          <line x1="425" y1="95" x2="455" y2="95" stroke="#ca9a00" stroke-width="2.5"/>
+          <!-- x-axis labels -->
+          <g font-size="11" fill="#323130" text-anchor="middle">
+            <text x="110" y="235">1–2 h</text>
+            <text x="220" y="235">3–4 h</text>
+            <text x="330" y="235">5–6 h</text>
+            <text x="440" y="235">7–8 h</text>
+          </g>
+          <!-- legend hint -->
+          <text x="46" y="13" font-size="9" fill="#797775">— median  □ IQR</text>
+        </svg>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Before-After Plot (SVG) -->
+  <div class="screenshot-frame" style="margin-bottom:0;">
+    <div class="screenshot-label">
+      <span class="badge">Chart 17</span>
+      <span class="title">Before-After Plot</span>
+      <span class="hint">training-results.csv — test score before and after training</span>
+    </div>
+    <div class="webpart">
+      <div class="wp-header"><span class="wp-header-text">Test Score Before &amp; After Training</span></div>
+      <div class="chart-container">
+        <svg viewBox="0 0 520 255" style="width:100%;height:auto;font-family:'Segoe UI',sans-serif;">
+          <!-- grid lines -->
+          <g stroke="#edebe9" stroke-width="1">
+            <line x1="100" y1="20" x2="420" y2="20"/>
+            <line x1="100" y1="68" x2="420" y2="68"/>
+            <line x1="100" y1="116" x2="420" y2="116"/>
+            <line x1="100" y1="164" x2="420" y2="164"/>
+            <line x1="100" y1="212" x2="420" y2="212"/>
+          </g>
+          <!-- y-axis labels -->
+          <g font-size="10" fill="#605e5c" text-anchor="end">
+            <text x="94" y="24">100</text><text x="94" y="72">75</text>
+            <text x="94" y="120">50</text><text x="94" y="168">25</text>
+            <text x="94" y="216">0</text>
+          </g>
+          <!-- x-axis column labels -->
+          <g font-size="12" fill="#323130" text-anchor="middle" font-weight="600">
+            <text x="180" y="238">Before</text>
+            <text x="340" y="238">After</text>
+          </g>
+          <!-- vertical axis lines at Before/After columns -->
+          <line x1="180" y1="20" x2="180" y2="212" stroke="#c8c6c4" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="340" y1="20" x2="340" y2="212" stroke="#c8c6c4" stroke-width="1" stroke-dasharray="4,3"/>
+          <!-- Paired lines and dots — y = 212 - score*1.92 -->
+          <!-- score 0→212, 25→164, 50→116, 75→68, 100→20 -->
+          <!-- gains (green) -->
+          <line x1="180" y1="164" x2="340" y2="105" stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 25→57 -->
+          <line x1="180" y1="145" x2="340" y2="87"  stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 35→65 -->
+          <line x1="180" y1="126" x2="340" y2="68"  stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 45→75 -->
+          <line x1="180" y1="106" x2="340" y2="49"  stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 55→84 -->
+          <line x1="180" y1="87"  x2="340" y2="39"  stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 65→90 -->
+          <line x1="180" y1="77"  x2="340" y2="30"  stroke="#107c10" stroke-width="1.5" opacity="0.7"/><!-- 70→94 -->
+          <!-- losses (red) -->
+          <line x1="180" y1="116" x2="340" y2="135" stroke="#d13438" stroke-width="1.5" opacity="0.7"/><!-- 50→40 -->
+          <line x1="180" y1="58"  x2="340" y2="78"  stroke="#d13438" stroke-width="1.5" opacity="0.7"/><!-- 80→70 -->
+          <!-- Before dots -->
+          <g fill="#0078d4" stroke="white" stroke-width="1.5">
+            <circle cx="180" cy="164" r="5"/>
+            <circle cx="180" cy="145" r="5"/>
+            <circle cx="180" cy="126" r="5"/>
+            <circle cx="180" cy="106" r="5"/>
+            <circle cx="180" cy="87"  r="5"/>
+            <circle cx="180" cy="77"  r="5"/>
+            <circle cx="180" cy="116" r="5"/>
+            <circle cx="180" cy="58"  r="5"/>
+          </g>
+          <!-- After dots -->
+          <g fill="#107c10" stroke="white" stroke-width="1.5">
+            <circle cx="340" cy="105" r="5"/>
+            <circle cx="340" cy="87"  r="5"/>
+            <circle cx="340" cy="68"  r="5"/>
+            <circle cx="340" cy="49"  r="5"/>
+            <circle cx="340" cy="39"  r="5"/>
+            <circle cx="340" cy="30"  r="5"/>
+          </g>
+          <g fill="#d13438" stroke="white" stroke-width="1.5">
+            <circle cx="340" cy="135" r="5"/>
+            <circle cx="340" cy="78"  r="5"/>
+          </g>
+          <!-- legend -->
+          <g font-size="10" fill="#323130">
+            <line x1="310" y1="13" x2="324" y2="13" stroke="#107c10" stroke-width="2"/>
+            <text x="327" y="16">Improved</text>
+            <line x1="380" y1="13" x2="394" y2="13" stroke="#d13438" stroke-width="2"/>
+            <text x="397" y="16">Declined</text>
+          </g>
+        </svg>
+      </div>
+      <div class="export-bar">
+        <span class="export-label">Export:</span>
+        <button class="export-btn">🖼 PNG</button>
+        <button class="export-btn">📄 CSV</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Heatmap (CSS grid) -->
   <div class="screenshot-frame" style="margin-bottom:0;">
     <div class="screenshot-label">

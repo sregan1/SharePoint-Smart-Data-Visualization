@@ -64,6 +64,8 @@ const FRAME_FILENAMES = [
   'chart-boxplot.png',              // Chart 13 — Box Plot (v2.0)
   'chart-treemap.png',              // Chart 14 — Treemap (v2.0)
   'chart-heatmap.png',              // Chart 15 — Heatmap (v2.0)
+  'chart-violin.png',               // Chart 16 — Violin Plot (v2.0)
+  'chart-beforeafter.png',          // Chart 17 — Before-After Plot (v2.0)
   'feature-drilldown.png',          // Feature — Drill-Down breadcrumbs (v2.0)
   'feature-viewer-filters.png',     // Feature — Viewer Filter Bar (v2.0)
   'feature-details-on-demand.png',  // Feature — Details on Demand (v2.0)
