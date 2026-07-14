@@ -4,6 +4,63 @@ All notable changes to Smart Data Visualization are documented here.
 
 ---
 
+## [1.3.0] — 2026-07-14
+
+A hardening release. No new chart types or data sources — this release is a full code review pass fixing 43 issues found across data loading, chart rendering, click/tooltip interactivity, and the property pane, plus documentation for previously-undocumented v1.2.0 settings (Dual Y Axis, Error Bars, Significance Brackets) and new screenshots covering Microsoft Graph setup and a finished multi-web-part page.
+
+### Added
+
+- **Documentation for Dual Y Axis, Error Bars, and Significance Brackets** — these v1.2.0 property pane groups had no README/User Guide coverage; both are now fully documented, including a new User Guide section 9
+- **`.xlsm` / `.xlsb` support** for Excel file uploads and SharePoint File URLs (previously only `.xlsx` / `.xls`)
+- **CSV parse warnings**: a partial parse (some rows malformed) now shows "N row(s) could not be parsed and were skipped" instead of silently dropping rows with no indication
+- **Fetch timeout** (30s) and a clearer error for non-JSON responses on REST API and SharePoint File requests, so a hung or misbehaving endpoint no longer leaves the panel stuck on "Loading…" indefinitely
+- **Billions (B) abbreviation tier** — "Abbreviate Numbers" now formats values ≥ 1 billion as e.g. `1.5B`, in addition to the existing K/M tiers
+- **Screenshots**: Microsoft Graph source with Data Path mapped to a sample JSON response, SharePoint Admin Center API access screen showing Graph permission approval, and a finished page composing six Smart Data Visualization web parts into an IT operations dashboard
+
+### Changed
+
+- **Chart export filenames** are now derived from the chart title (e.g. `Monthly Revenue.png`) instead of the generic `chart.png` / `data.csv`, so multiple exports from a page with several web parts no longer collide
+- **SharePoint list loads** exclude a short list of always-useless internal fields (`ContentTypeId`, `GUID`, `OData__UIVersionString`, and similar) from the column mapper
+- **Property pane color fields** (Reference Line Color, Threshold Color) now validate hex input and show an error for invalid values instead of silently degrading the chart
+- Adopted stricter TypeScript union types (`SortDirection`, `AggregationType`, `XAxisType`, `TrendlineType`, `ReferenceLineType`, `LegendPosition`, `ThresholdDirection`) across the web part's property interface
+- Scatter/bubble/heatmap category grouping and discovery now run in a single pass instead of one scan per category, for datasets with many distinct categories
+- `ChartRenderer` is now memoized (`React.memo`) and number formatters are cached, and the read-mode viewer filter debounces its expensive recompute by 250ms instead of re-filtering on every keystroke
+
+### Fixed
+
+- **Numeric X-axis mapping silently reset on every page load**: switching chart types reset a deliberately-mapped numeric X column (e.g. a bar chart of `Year` vs `Sales`) back to a text column on mount, and persisted the change — the reset now only fires when actually leaving a chart type that requires a numeric X axis
+- **`Count` aggregation rendered a blank chart**: the generated `Count` column was never reachable as a Y column; charts now read it correctly, and a column literally named `Count` no longer collides with the aggregation output
+- **JPEG export was solid black, and dark-theme PNG export was invisible on a white background** — both now composite onto an opaque background before export
+- **Chart clicks and tooltip extra columns showed the wrong row** on Pie/Doughnut, Scatter/Bubble (including color-by-category and log/time-axis variants), and time-axis Bar/Line/Area charts, because filtered/partitioned chart elements were indexed directly into the unfiltered source data
+- **Microsoft Graph collections silently truncated at ~100 items** with no warning — results now page through `@odata.nextLink` (up to 50 pages) and show a truncation warning like the SharePoint list source
+- **Auto-refresh and the manual Refresh button could reload from a stale URL** after an inline data-source edit, and the wrong session-cache entry could be cleared
+- **Applying a bookmark while editing didn't persist** — a later save could revert the chart to its pre-bookmark view
+- **Numeric values stored as text sorted alphabetically** ("100" before "20") instead of numerically
+- **Excel date columns loaded as raw serial numbers** (e.g. `45329`) instead of dates
+- **Per-series color/type overrides desynced** when a Y column in the middle of the list was unchecked, silently reassigning colors to the wrong series
+- **Delimiter changes had no effect** on an already-uploaded CSV/TSV file, since the Load button is hidden once a file loads
+- **A typo'd Data Path, or a null entry in a REST/Graph array, crashed with a raw JavaScript error** instead of a readable message
+- **A SharePoint sharing link ("Copy link" URL) parsed as CSV garbage** instead of a clear error explaining a direct file URL is needed
+- **Dual Y axis and log-scale toggles were miswired**: enabling dual axis on a Horizontal Bar chart produced a broken second category axis; "Log Scale (X)" affected the Y axis instead on Scatter/Bubble, and was offered (with no effect) on Histogram
+- **The `monochrome` color palette's last two swatches were invalid** (3-digit hex), producing an invalid color once transparency was applied
+- **Pie/Doughnut legend text lost its color in dark theme**
+- **Significance brackets silently never rendered on Horizontal Bar charts** (now Bar chart only, matching where the bracket math is correct)
+- **Error bars drew wildly incorrect lengths on a logarithmic axis**
+- **"Cache API Results" was offered for every data source** even though only REST API and Microsoft Graph use it; now disabled for other sources
+- **A background auto-refresh could close the data source panel** while an editor had it open
+- **A hand-edited or corrupted bookmark could crash the whole web part** for viewers; malformed entries are now filtered out
+- **Clearing an upper drill level left lower levels in a broken, disabled-but-populated state**
+- Radar charts ignored the **Y Axis Minimum/Maximum** setting
+- A manual "Load Data" click for REST/Graph sources didn't clear the session cache, so a page reload could resurrect stale cached data
+- List discovery in the Site URL field fired one request per keystroke instead of debouncing
+- The sheet picker and delimiter selection could persist after switching to a different data source type
+
+### Technical
+
+- `package-solution.json` feature version corrected to match the solution version; developer URL corrected to `https://`
+
+---
+
 ## [1.2.0] — 2026-06-19
 
 ### Added

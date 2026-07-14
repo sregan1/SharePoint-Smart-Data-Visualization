@@ -23,6 +23,9 @@ import {
   loadRestApi,
   loadGraphApi,
   SP_LIST_ROW_LIMIT,
+  GRAPH_MAX_PAGES,
+  clearCachedRows,
+  buildCacheKey,
 } from '../services/dataLoaders';
 import styles from './SmartDataVisualization.module.scss';
 
@@ -67,6 +70,9 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   // Kept so the user can switch sheets without re-uploading the file
   const workbookRef = React.useRef<XLSX.WorkBook | null>(null);
+  // Kept so the delimiter dropdown can re-parse an uploaded text file without
+  // requiring a re-upload (the Load button is hidden once a file is loaded).
+  const rawTextRef = React.useRef<string | null>(null);
   const [sheetNames, setSheetNames] = React.useState<string[]>([]);
   // Unique id prefix so label/input pairing stays valid with multiple instances on a page
   const idPrefix = React.useRef(`sdv-${Math.random().toString(36).slice(2, 8)}`).current;
@@ -76,30 +82,34 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
   React.useEffect(() => {
     if (config.dataSourceType !== 'sharePointList') return;
     let cancelled = false;
-    const discover = async () => {
-      setIsDiscovering(true);
-      setDiscoverError('');
-      try {
-        const sp = spfi(config.siteUrl || context.pageContext.web.absoluteUrl).using(SPFx(context));
-        const lists = await sp.web.lists
-          .filter('Hidden eq false')
-          .select('Title')
-          .orderBy('Title', true)();
-        if (!cancelled) {
-          setAvailableLists((lists as Array<{ Title: string }>).map(l => l.Title));
+    // Debounce — config.siteUrl updates on every keystroke, and firing a PnPjs
+    // request per keystroke against a partially-typed URL risks 429 throttling.
+    const timer = setTimeout(() => {
+      const discover = async () => {
+        setIsDiscovering(true);
+        setDiscoverError('');
+        try {
+          const sp = spfi(config.siteUrl || context.pageContext.web.absoluteUrl).using(SPFx(context));
+          const lists = await sp.web.lists
+            .filter('Hidden eq false')
+            .select('Title')
+            .orderBy('Title', true)();
+          if (!cancelled) {
+            setAvailableLists((lists as Array<{ Title: string }>).map(l => l.Title));
+          }
+        } catch {
+          if (!cancelled) setDiscoverError(strings.ListDiscoveryError);
+        } finally {
+          if (!cancelled) setIsDiscovering(false);
         }
-      } catch {
-        if (!cancelled) setDiscoverError(strings.ListDiscoveryError);
-      } finally {
-        if (!cancelled) setIsDiscovering(false);
-      }
-    };
-    discover();
-    return () => { cancelled = true; };
+      };
+      discover();
+    }, 500);
+    return () => { cancelled = true; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.dataSourceType, config.siteUrl]);
 
-  const handleDataLoaded = (data: IChartRecord[], fileName?: string) => {
+  const handleDataLoaded = (data: IChartRecord[], fileName?: string, parseWarningCount?: number) => {
     const columns = extractColumns(data);
     setError('');
     setWarning('');
@@ -119,6 +129,12 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       setSuccess(fmt(strings.LoadedRowsColumns, data.length, columns.length));
     }
 
+    // A partial CSV parse (some rows malformed) isn't fatal — the rest still
+    // loaded — but the user should know rows were silently dropped.
+    if (parseWarningCount) {
+      setWarning(fmt(strings.CsvParseWarning, parseWarningCount));
+    }
+
     onDataLoaded(data, columns);
   };
 
@@ -134,20 +150,25 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     try {
       const name = file.name.toLowerCase();
       let data: IChartRecord[];
+      let parseWarningCount = 0;
       if (name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt')) {
         const text = await file.text();
-        data = parseCsvText(text, config.delimiter || undefined);
+        rawTextRef.current = text;
+        const parsed = parseCsvText(text, config.delimiter || undefined);
+        data = parsed.rows;
+        parseWarningCount = parsed.errorCount;
         workbookRef.current = null;
         setSheetNames([]);
-      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      } else if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm') || name.endsWith('.xlsb')) {
+        rawTextRef.current = null;
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
         workbookRef.current = workbook;
         setSheetNames(workbook.SheetNames.length > 1 ? workbook.SheetNames.slice() : []);
         data = sheetToRows(workbook, config.sheetName || undefined);
       } else {
         throw new Error(strings.ErrorUnsupportedFileType);
       }
-      handleDataLoaded(data, file.name);
+      handleDataLoaded(data, file.name, parseWarningCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : strings.ErrorParseFile);
     } finally {
@@ -180,7 +201,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       const sheet = sheetOverride !== undefined ? sheetOverride : (config.sheetName || undefined);
       const result = await loadSharePointFile(config.dataUrl, config.delimiter || undefined, sheet);
       setSheetNames(result.sheetNames && result.sheetNames.length > 1 ? result.sheetNames : []);
-      handleDataLoaded(result.rows);
+      handleDataLoaded(result.rows, undefined, result.parseWarningCount);
     } catch (err) {
       setError(fmt(strings.ErrorLoadFile, err instanceof Error ? err.message : String(err)));
     } finally {
@@ -195,6 +216,9 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     try {
       const result = await loadRestApi(config.dataUrl, config.dataPath || undefined);
       handleDataLoaded(result.rows);
+      // A manual load reflects the latest server data — clear any older
+      // cached entry so a later page reload doesn't resurrect stale rows.
+      clearCachedRows(buildCacheKey('restApi', config.dataUrl, config.dataPath));
     } catch (err) {
       setError(fmt(strings.ErrorFetchData, err instanceof Error ? err.message : String(err)));
     } finally {
@@ -209,6 +233,10 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     try {
       const result = await loadGraphApi(context, config.dataUrl, config.dataPath || undefined);
       handleDataLoaded(result.rows);
+      clearCachedRows(buildCacheKey('graphApi', config.dataUrl, config.dataPath));
+      if (result.truncated) {
+        setWarning(fmt(strings.GraphTruncatedWarning, GRAPH_MAX_PAGES));
+      }
     } catch (err) {
       setError(fmt(strings.ErrorFetchData, err instanceof Error ? err.message : String(err)));
     } finally {
@@ -223,6 +251,20 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
       case 'sharePointFile': handleSharePointFile(); break;
       case 'restApi': handleRestApi(); break;
       case 'graphApi': handleGraphApi(); break;
+    }
+  };
+
+  const handleDelimiterChange = (delimiter: string) => {
+    onConfigChange({ delimiter });
+    // The Load button is hidden once an upload has loaded — re-parse the
+    // retained raw text so changing the delimiter actually takes effect.
+    if (config.dataSourceType === 'upload' && rawTextRef.current !== null) {
+      try {
+        const parsed = parseCsvText(rawTextRef.current, delimiter || undefined);
+        handleDataLoaded(parsed.rows, uploadedFileName || config.uploadedFileName, parsed.errorCount);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : strings.ErrorParseFile);
+      }
     }
   };
 
@@ -241,6 +283,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
     setSuccess('');
     setWarning('');
     workbookRef.current = null;
+    rawTextRef.current = null;
     setSheetNames([]);
     // Small delay so state clears before the picker opens
     setTimeout(() => fileInputRef.current?.click(), 50);
@@ -262,7 +305,13 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
           <button
             key={type}
             className={`${styles.sourceTypeCard} ${config.dataSourceType === type ? styles.selected : ''}`}
-            onClick={() => { onConfigChange({ dataSourceType: type }); setError(''); setSuccess(''); setWarning(''); }}
+            onClick={() => {
+              onConfigChange({ dataSourceType: type });
+              setError(''); setSuccess(''); setWarning('');
+              // A sheet picker or delimiter left over from a previous source
+              // type is meaningless once the source type has changed.
+              workbookRef.current = null; rawTextRef.current = null; setSheetNames([]);
+            }}
             aria-pressed={config.dataSourceType === type}
           >
             <span className={styles.icon} aria-hidden="true">{DATA_SOURCE_ICONS[type]}</span>
@@ -277,7 +326,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.tsv,.txt,.xlsx,.xls"
+            accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.xlsb"
             style={{ display: 'none' }}
             onChange={handleFileUpload}
             aria-label={strings.UploadHelp}
@@ -297,7 +346,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
                 </button>
                 <button
                   className={styles.secondaryButton}
-                  onClick={() => { onClearData(); setSuccess(''); setWarning(''); workbookRef.current = null; setSheetNames([]); }}
+                  onClick={() => { onClearData(); setSuccess(''); setWarning(''); workbookRef.current = null; rawTextRef.current = null; setSheetNames([]); }}
                   disabled={loading}
                 >
                   {strings.ClearButton}
@@ -318,7 +367,7 @@ const DataSourcePanel: React.FC<IDataSourcePanelProps> = ({
               <select
                 id={`${idPrefix}-delimiter`}
                 value={config.delimiter || ''}
-                onChange={e => onConfigChange({ delimiter: e.target.value })}
+                onChange={e => handleDelimiterChange(e.target.value)}
               >
                 {DELIMITER_OPTIONS.map(opt => (
                   <option key={opt.label} value={opt.value}>{opt.label}</option>

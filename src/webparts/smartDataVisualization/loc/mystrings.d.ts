@@ -73,6 +73,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   YAxisMaxFieldLabel: string;
   AutoPlaceholder: string;
   NumericValidationError: string;
+  ColorValidationError: string;
   LogScaleFieldLabel: string;
   LogScaleXFieldLabel: string;
   StepLineFieldLabel: string;
@@ -166,6 +167,7 @@ declare interface ISmartDataVisualizationWebPartStrings {
   UnsupportedChartTypeLabel: string;
   ChartAriaLabel: string;
   ScatterNumericWarning: string;
+  TimeAxisUnparseableWarning: string;
   // Data source panel
   DataSourceSectionHeader: string;
   SourceUploadLabel: string;
@@ -208,6 +210,10 @@ declare interface ISmartDataVisualizationWebPartStrings {
   ErrorLoadList: string;
   ErrorLoadFile: string;
   ErrorFetchData: string;
+  ErrorDataPathNotFound: string;
+  ErrorUrlReturnedHtml: string;
+  ErrorRequestTimedOut: string;
+  ErrorNonJsonResponse: string;
   ErrorUnsupportedFileType: string;
   ErrorReadFile: string;
   ErrorParseFile: string;
@@ -215,6 +221,8 @@ declare interface ISmartDataVisualizationWebPartStrings {
   LoadedRowsColumnsPersist: string;
   SizeWarning: string;
   ListTruncatedWarning: string;
+  GraphTruncatedWarning: string;
+  CsvParseWarning: string;
   // Column mapper
   ColumnMappingSectionHeader: string;
   CategoryColumnLabel: string;

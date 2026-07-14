@@ -199,6 +199,16 @@ export default class SmartDataVisualizationWebPart
     return Version.parse('1.0');
   }
 
+  // Optional color fields: empty is valid (use the default), otherwise must be
+  // a 3/6/8-digit hex color. An invalid CSS color silently degrades the chart
+  // (canvas ignores it) with no visible error, so catch it here instead.
+  private _validateOptionalColor(value: string): string {
+    if (!value || !value.trim()) return '';
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim())
+      ? ''
+      : strings.ColorValidationError;
+  }
+
   // Optional numeric fields: empty is valid (auto), anything else must parse as a number
   private _validateOptionalNumber(value: string): string {
     if (!value || !value.trim()) return '';
@@ -209,7 +219,7 @@ export default class SmartDataVisualizationWebPart
   // fields — the pane must rebuild for those states to update live.
   private static readonly PANE_STRUCTURE_FIELDS = [
     'chartType', 'showLegend', 'trendline', 'referenceLineType',
-    'errorBarType', 'stepLine',
+    'errorBarType',
   ];
 
   protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: unknown, newValue: unknown): void {
@@ -409,7 +419,7 @@ export default class SmartDataVisualizationWebPart
                   label: strings.LogScaleFieldLabel,
                   checked: this.properties.logScale || false,
                 }),
-                ...(['scatter', 'bubble', 'histogram'].indexOf(currentType) >= 0 ? [
+                ...(['scatter', 'bubble'].indexOf(currentType) >= 0 ? [
                   PropertyPaneToggle('logScaleX', {
                     label: strings.LogScaleXFieldLabel,
                     checked: this.properties.logScaleX || false,
@@ -506,6 +516,7 @@ export default class SmartDataVisualizationWebPart
                 PropertyPaneTextField('referenceLineColor', {
                   label: strings.ReferenceLineColorFieldLabel,
                   placeholder: '#666666',
+                  onGetErrorMessage: (value: string) => this._validateOptionalColor(value),
                 }),
               ],
             },
@@ -550,7 +561,7 @@ export default class SmartDataVisualizationWebPart
               ],
             },
             ] : []),
-            ...(['bar', 'horizontalBar'].indexOf(currentType) >= 0 ? [
+            ...(currentType === 'bar' ? [
             {
               groupName: strings.SignificanceGroupName,
               groupFields: [
@@ -610,6 +621,7 @@ export default class SmartDataVisualizationWebPart
                 PropertyPaneTextField('thresholdColor', {
                   label: strings.ThresholdColorFieldLabel,
                   placeholder: '#d13438',
+                  onGetErrorMessage: (value: string) => this._validateOptionalColor(value),
                 }),
               ],
             },
@@ -631,6 +643,8 @@ export default class SmartDataVisualizationWebPart
                   max: 60,
                   step: 5,
                   value: this.properties.cacheMinutes || 0,
+                  // Only the REST/Graph loaders consult the session cache.
+                  disabled: ['restApi', 'graphApi'].indexOf(this.properties.dataSourceType || 'upload') < 0,
                 }),
               ],
             },

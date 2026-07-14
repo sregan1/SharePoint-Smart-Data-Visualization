@@ -1,5 +1,15 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
-import { ChartType, DataSourceType } from '../types';
+import {
+  ChartType,
+  DataSourceType,
+  SortDirection,
+  AggregationType,
+  XAxisType,
+  TrendlineType,
+  ReferenceLineType,
+  LegendPosition,
+  ThresholdDirection,
+} from '../types';
 
 export interface IChartSelection {
   category: string;
@@ -20,7 +30,7 @@ export interface ISmartDataVisualizationWebPartProps {
   xAxisLabel: string;
   yAxisLabel: string;
   // Layout
-  legendPosition: string;
+  legendPosition: LegendPosition;
   chartHeight: number;
   showExportBar: boolean;
   // Data source
@@ -54,31 +64,31 @@ export interface ISmartDataVisualizationWebPartProps {
   xLabelRotation: number;
   // Data manipulation (inline controls)
   sortColumn: string;
-  sortDirection: string;
+  sortDirection: SortDirection;
   rowLimit: number;
   filterColumn: string;
   filterValue: string;
   // Aggregation (inline controls)
   groupByColumn: string;
-  aggregation: string;
+  aggregation: AggregationType;
   // Data & refresh
   refreshIntervalMinutes: number;
   cacheMinutes: number;
   sheetName: string;
   // Axes
-  xAxisType: string;
+  xAxisType: XAxisType;
   // Combo charts
   seriesTypes: string;
   // Conditional formatting
   thresholdValue: string;
-  thresholdDirection: string;
+  thresholdDirection: ThresholdDirection;
   thresholdColor: string;
   // Analytics
-  trendline: string;
+  trendline: TrendlineType;
   trendWindow: number;
   forecastPeriods: number;
   // Reference line
-  referenceLineType: string;
+  referenceLineType: ReferenceLineType;
   referenceLineValue: string;
   referenceLineColor: string;
   // Histogram

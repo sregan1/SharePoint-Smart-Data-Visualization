@@ -55,7 +55,14 @@ const AdvancedOptions: React.FC<IAdvancedOptionsProps> = ({
   const setDrillLevel = (level: number, col: string) => {
     const next = [...drillList];
     while (next.length <= level) next.push('');
-    next[level] = col;
+    if (!col) {
+      // Clearing a level invalidates every level below it too — otherwise
+      // e.g. clearing level 1 while level 2 is set leaves a leading empty
+      // slot ("",B,C) that the trailing-empty trim below can't remove.
+      next.length = level;
+    } else {
+      next[level] = col;
+    }
     // Trim trailing empties so "Level 1 only" produces a clean single-entry list
     while (next.length && !next[next.length - 1]) next.pop();
     onChange({ drillDownColumns: next.join(',') });

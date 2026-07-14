@@ -1,5 +1,7 @@
 # Smart Data Visualization — User Guide
 
+*Version 1.3.0*
+
 This guide walks through every feature of the Smart Data Visualization web part from a page editor's perspective.
 
 ---
@@ -19,14 +21,15 @@ This guide walks through every feature of the Smart Data Visualization web part 
 6. [Choosing a Chart Type](#6-choosing-a-chart-type)
 7. [Chart Settings (Property Pane)](#7-chart-settings-property-pane)
 8. [Analytics — Trendlines, Forecast, Reference Lines](#8-analytics--trendlines-forecast-reference-lines)
-9. [Conditional Formatting](#9-conditional-formatting)
-10. [Interactive Features for Page Viewers](#10-interactive-features-for-page-viewers)
-11. [Web Part Header](#11-web-part-header)
-12. [Viewing the Data Table](#12-viewing-the-data-table)
-13. [Exporting](#13-exporting)
-14. [Sample Data Quick-Start](#14-sample-data-quick-start)
-15. [Chart Type Reference](#15-chart-type-reference)
-16. [Troubleshooting](#16-troubleshooting)
+9. [Dual Y Axis, Error Bars & Significance Brackets](#9-dual-y-axis-error-bars--significance-brackets)
+10. [Conditional Formatting](#10-conditional-formatting)
+11. [Interactive Features for Page Viewers](#11-interactive-features-for-page-viewers)
+12. [Web Part Header](#12-web-part-header)
+13. [Viewing the Data Table](#13-viewing-the-data-table)
+14. [Exporting](#14-exporting)
+15. [Sample Data Quick-Start](#15-sample-data-quick-start)
+16. [Chart Type Reference](#16-chart-type-reference)
+17. [Troubleshooting](#17-troubleshooting)
 
 ---
 
@@ -38,7 +41,7 @@ This guide walks through every feature of the Smart Data Visualization web part 
 4. Search for **Smart Data Visualization** and click it.
 5. The web part appears in edit mode, showing the data source panel.
 
-> **Tip:** The data source panel and column mapper are only visible when the page is in **Edit** mode. In View mode, page visitors see the chart plus any viewer features you enable (filters, bookmarks, drill-down — see [section 10](#10-interactive-features-for-page-viewers)).
+> **Tip:** The data source panel and column mapper are only visible when the page is in **Edit** mode. In View mode, page visitors see the chart plus any viewer features you enable (filters, bookmarks, drill-down — see [section 11](#11-interactive-features-for-page-viewers)).
 
 ---
 
@@ -264,7 +267,7 @@ Save the current view — filters, sorting, grouping, and column mapping — und
 
 1. Type a name (e.g., `Top 10 by Region`) and click **Save Current View**.
 2. Apply or delete saved bookmarks from the list.
-3. Page viewers get a **— Apply a bookmark —** dropdown above the chart (see [section 10](#10-interactive-features-for-page-viewers)).
+3. Page viewers get a **— Apply a bookmark —** dropdown above the chart (see [section 11](#11-interactive-features-for-page-viewers)).
 
 Applying a bookmark changes the view without altering the saved page configuration.
 
@@ -311,7 +314,7 @@ Settings are organized into three pages — use the **Back / Next** links at the
 
 | Setting | Description |
 |---|---|
-| **Show Header / Header Text** | Page-level title above the chart (see [section 11](#11-web-part-header)) |
+| **Show Header / Header Text** | Page-level title above the chart (see [section 12](#12-web-part-header)) |
 | **Chart Title** | Text displayed inside the chart canvas |
 | **Chart Type** | The visualization style (see [section 6](#6-choosing-a-chart-type)) |
 | **Legend Position** | Bottom, Top, Left, or Right |
@@ -331,9 +334,11 @@ Settings are organized into three pages — use the **Back / Next** links at the
 | **Show Data Labels** | Display each data point's value on the chart |
 | **Value Prefix / Suffix** | Text around each label (e.g., `$`, `%`) |
 | **Decimal Places** | 0–4 |
-| **Abbreviate Numbers (K/M)** | 1,000 → 1K, 1,000,000 → 1M |
+| **Abbreviate Numbers (K/M)** | 1,000 → 1K, 1,000,000 → 1M, 1,000,000,000 → 1B |
 | **Y Axis Minimum / Maximum** | Override the axis range (leave blank for automatic) |
 | **Logarithmic Scale** | For values spanning several orders of magnitude |
+| **Logarithmic Scale (X)** | Same, for the X axis — Scatter and Bubble charts only |
+| **Step Interpolation** | Draw the line in steps instead of straight or smoothed segments — Line and Area charts only |
 | **Show Grid Lines** | Toggle grid lines |
 | **X Label Rotation** | Rotate long category labels |
 | **X Axis Type** | **Auto-detect** (default), **Category**, or **Time (dates)** — Time plots date values on a true chronological axis |
@@ -342,12 +347,14 @@ Settings are organized into three pages — use the **Back / Next** links at the
 
 ![Property pane — Advanced page with Analytics, Interactivity, and Data & Refresh groups](screenshots/settings-advanced.png)
 
-Covered in detail in sections [8](#8-analytics--trendlines-forecast-reference-lines), [9](#9-conditional-formatting), and [10](#10-interactive-features-for-page-viewers), plus:
+Covered in detail in sections [8](#8-analytics--trendlines-forecast-reference-lines), [9](#9-dual-y-axis-error-bars--significance-brackets), [10](#10-conditional-formatting), and [11](#11-interactive-features-for-page-viewers), plus:
 
 | Setting | Description |
 |---|---|
-| **Auto-Refresh Interval** | Reload network sources every N minutes (0 = off) — for always-on dashboard pages |
-| **Cache API Results** | Cache REST/Graph responses for N minutes per browser session (0 = off) |
+| **Overlay Data Points on Bars** | Show individual value markers on top of bars — Bar and Horizontal Bar charts only |
+| **Show Bubble Size Legend** | Small/medium/large size key for the Bubble chart |
+| **Auto-Refresh Interval** | Reload network sources every N minutes (0 = off) — for always-on dashboard pages; disabled for the Upload File source |
+| **Cache API Results** | Cache REST/Graph responses for N minutes per browser session (0 = off) — only applies to the REST API and Microsoft Graph sources |
 
 All settings are saved with the page automatically.
 
@@ -380,7 +387,48 @@ The line is labeled with its value in the legend, and its color is configurable.
 
 ---
 
-## 9. Conditional Formatting
+## 9. Dual Y Axis, Error Bars & Significance Brackets
+
+*(Property pane → Advanced page → Dual Y Axis, Error Bars, and Significance Brackets groups — Bar, Horizontal Bar, Line, and Area charts, except Significance Brackets which is Bar only)*
+
+### Dual Y Axis
+
+When two series have very different scales — say, Revenue in dollars and Conversion Rate as a percentage — plotting them on one axis flattens the smaller series. Dual Y Axis fixes this:
+
+1. In **Right-axis series**, type the exact column name(s) to move to the right axis, comma-separated for more than one (e.g. `Margin,Growth`).
+2. Optionally set a **Right axis label** to caption it.
+3. Toggle **Log Scale (Right Axis)** if the right-axis values themselves span several orders of magnitude.
+
+Any Y column not listed stays on the original (left) axis.
+
+### Error Bars
+
+Show a margin of uncertainty above and below each bar or point:
+
+| Error Bar Type | What it draws |
+|---|---|
+| **Custom column (±)** | Reads the ± amount from another column you pick in **Error value column** — use this when you already have a margin, confidence interval, or standard deviation calculated per row |
+| **Std Dev (computed)** | Computes the standard deviation of each series automatically |
+| **Std Error of Mean (computed)** | Computes the standard error of the mean of each series automatically |
+
+### Significance Brackets
+
+*(Bar chart only)*
+
+Annotate a statistical comparison between two categories with a bracket and a label above the bars — the kind of annotation common in scientific and clinical charts (e.g., marking `p<0.05` between two treatment groups).
+
+In **Bracket pairs**, enter one comparison per line as `col1,col2,label`:
+
+```
+GroupA,GroupB,*
+GroupA,GroupC,p<0.05
+```
+
+`col1` and `col2` must match category values on the X axis exactly. A JSON array of `{ "col1", "col2", "label" }` objects is also accepted for more complex cases.
+
+---
+
+## 10. Conditional Formatting
 
 *(Property pane → Advanced page → Conditional Formatting)*
 
@@ -394,7 +442,7 @@ Bars crossing the threshold are recolored; on line/area charts the data points a
 
 ---
 
-## 10. Interactive Features for Page Viewers
+## 11. Interactive Features for Page Viewers
 
 These features change what *visitors* can do with the published page. All are off by default.
 
@@ -434,7 +482,7 @@ The web part publishes three dynamic data properties — **Selected category**, 
 
 ---
 
-## 11. Web Part Header
+## 12. Web Part Header
 
 The web part can display an optional title above the chart, styled like a standard SharePoint web part header.
 
@@ -449,7 +497,7 @@ The header appears as a prominent title line above the chart in both Edit and Vi
 
 ---
 
-## 12. Viewing the Data Table
+## 13. Viewing the Data Table
 
 Enable **Show Data Table** in the property pane to display a scrollable, paginated table of all loaded data below the chart.
 
@@ -461,7 +509,7 @@ Enable **Show Data Table** in the property pane to display a scrollable, paginat
 
 ---
 
-## 13. Exporting
+## 14. Exporting
 
 When **Show Export Bar** is on, four buttons appear below the chart:
 
@@ -475,7 +523,7 @@ Cell values that could be interpreted as formulas are escaped automatically, so 
 
 ---
 
-## 14. Sample Data Quick-Start
+## 15. Sample Data Quick-Start
 
 The following examples let you try the chart types immediately using the included sample files.
 
@@ -575,7 +623,7 @@ No sample file ships with two category dimensions for the **Heatmap** — try it
 
 ---
 
-## 15. Chart Type Reference
+## 16. Chart Type Reference
 
 ### Stacked mode
 
@@ -599,6 +647,10 @@ Seven built-in palettes are available in the property pane. Choose one that fits
 
 Bar, Line, Area, and Radar charts support multiple Y columns — each becomes a series with its own color. Bar/Line/Area series can individually render as bars or lines for combo charts — use the **Default / Bar / Line** dropdown next to each checked Y column in the Column Mapping panel.
 
+### Data point overlay (Bar / Horizontal Bar)
+
+Turn on **Overlay Data Points on Bars** (Advanced page → Interactivity) to draw a small marker at each bar's exact value on top of the bar — useful when you also want the precise value visible without turning on data labels for every bar.
+
 ### Pie / Doughnut best practices
 
 - Keep to 7 or fewer slices for readability.
@@ -607,7 +659,7 @@ Bar, Line, Area, and Radar charts support multiple Y columns — each becomes a 
 
 ### Bubble chart sizing
 
-The **Size / Radius column** values are square-rooted internally to keep proportions readable. A company with 1000 employees produces a bubble proportional to √1000 ≈ 31.6, not 1000 pixels wide.
+The **Size / Radius column** values are square-rooted internally to keep proportions readable. A company with 1000 employees produces a bubble proportional to √1000 ≈ 31.6, not 1000 pixels wide. Turn on **Show Bubble Size Legend** (Advanced page → Interactivity) to display a small/medium/large size key alongside the chart so viewers can judge what a given bubble size represents.
 
 ### KPI Tile aggregation
 
@@ -623,7 +675,7 @@ Cell color intensity scales with the absolute value relative to the largest valu
 
 ---
 
-## 16. Troubleshooting
+## 17. Troubleshooting
 
 ### "No data loaded yet"
 
@@ -651,7 +703,7 @@ A SharePoint platform limit. Pre-filter or aggregate the data upstream (e.g., a 
 
 ### Microsoft Graph: "HTTP 401" or "HTTP 403"
 
-The solution's Graph permissions have not been approved, or your endpoint requires a scope that wasn't requested. Ask a tenant admin to approve the request in **SharePoint Admin Center → Advanced → API access**, and add any extra scopes to `config/package-solution.json`.
+The required Graph permission hasn't been granted yet, or your endpoint needs a scope that hasn't been added. Ask a tenant admin to open **SharePoint Admin Center → Advanced → API access** and grant `User.Read` (plus any additional scope your endpoint needs, e.g. `Reports.Read.All`) for the `SharePoint Online Client Extensibility Web Application Principal` — see the [Microsoft Graph](#microsoft-graph) section above. This is a one-time, no-redeployment step.
 
 ### REST API: "HTTP 401" or "HTTP 403"
 

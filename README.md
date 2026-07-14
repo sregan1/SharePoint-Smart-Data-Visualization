@@ -1,6 +1,6 @@
 # Smart Data Visualization — SharePoint SPFx Web Part
 
-[![Website](https://img.shields.io/badge/Website-sharepointsmartsolutions.com-blue)](https://sharepointsmartsolutions.com/smart-data-visualization) [![User Guide](https://img.shields.io/badge/User%20Guide-Read%20Now-green)](USER-GUIDE.md) [![Download](https://img.shields.io/badge/Download-Latest%20Release-CA5010?logo=github&logoColor=white)](../../releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.3.0-informational)](CHANGELOG.md) [![Website](https://img.shields.io/badge/Website-sharepointsmartsolutions.com-blue)](https://sharepointsmartsolutions.com/smart-data-visualization) [![User Guide](https://img.shields.io/badge/User%20Guide-Read%20Now-green)](USER-GUIDE.md) [![Download](https://img.shields.io/badge/Download-Latest%20Release-CA5010?logo=github&logoColor=white)](../../releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A SharePoint Framework (SPFx) web part that renders interactive charts from multiple data sources with no coding required — 17 chart types, drill-down, bookmarks, trendlines, and click-to-filter integration, all configured through the SharePoint page editor.
 
@@ -57,8 +57,12 @@ The property pane is organized into three focused pages — **Chart**, **Appeara
 - **Trendlines & forecast** — linear regression or moving average overlays; project the trend up to 12 periods ahead
 - **Reference lines** — fixed value, mean, or median drawn as a dashed line
 - **Date/time X axis** — date columns are auto-detected and plotted on a true time scale
+- **Logarithmic axes** — Y axis on most chart types, X axis on Scatter/Bubble, independently on a secondary axis
 - **Conditional formatting** — highlight values above or below a threshold in a custom color
 - **Combo charts** — mix bars and lines per series on the same chart
+- **Dual Y axis** — plot a subset of series against a second, independently scaled right-hand axis (Bar, Line, Area)
+- **Error bars** — standard deviation, standard error, or a custom per-row margin column (Bar, Line, Area)
+- **Significance brackets** — annotate statistical comparisons between bar groups with a label, e.g. `*` or `p<0.05` (Bar)
 
 ### Interactivity
 
@@ -78,6 +82,9 @@ The property pane is organized into three focused pages — **Chart**, **Appeara
 - **7 color palettes** — Office, Vibrant, Pastel, Monochrome, Traffic Light, Warm, Cool — plus per-series color overrides and color-by-category for scatter/bubble
 - **Data labels** — optional value annotations with prefix/suffix and K/M abbreviation
 - **Stacked bars** — toggle stacking on Bar and Line charts
+- **Step interpolation** — render Line/Area charts with stepped segments instead of straight/smooth ones
+- **Data point overlay** — show individual value markers on top of Bar/Horizontal Bar charts
+- **Bubble size legend** — optional small/medium/large size key for the Bubble chart
 - **Data table** — optional tabular view below the chart, paginated
 - **Export** — download as PNG, JPEG, CSV (UTF-8 with BOM, Excel-safe), or Excel from every chart
 - **Dark theme support** — chart colors adapt to dark section backgrounds
@@ -111,6 +118,12 @@ See [Chart Types](#chart-types) above for individual chart screenshots.
 | **Viewer Filter Bar** | **Details on Demand** |
 | ![Advanced options panel](screenshots/feature-advanced-options.png) | ![Property pane — advanced page](screenshots/settings-advanced.png) |
 | **Advanced Options Panel** | **Property Pane — Advanced Page** |
+| ![Microsoft Graph source with Data Path mapped to a JSON response](screenshots/graphapi-datapath.png) | ![SharePoint Admin Center — API access, Graph scopes pending approval](screenshots/admin-graph-consent.png) |
+| **Microsoft Graph — Data Path Mapping** | **Admin — Graph Permission Approval** |
+
+**Several web parts composed on one page:**
+
+![Finished IT Operations dashboard with six Smart Data Visualization web parts](screenshots/showcase-it-ops-page.png)
 
 ---
 
@@ -207,10 +220,6 @@ The pane is organized into three pages — **Chart**, **Appearance**, and **Adva
 | **X / Y Axis Label** | _(blank)_ | Labels along each axis |
 | **Histogram Bins** | 10 | Number of bins (4–50) — Histogram chart type only |
 
-**Advanced**
-
-| Setting | Default | Description |
-|---|---|---|
 ### Page 2 — Appearance
 
 | Setting | Default | Description |
@@ -219,9 +228,11 @@ The pane is organized into three pages — **Chart**, **Appearance**, and **Adva
 | **Show Data Labels** | Off | Annotate each data point with its value |
 | **Value Prefix / Suffix** | _(blank)_ | Text around each label (e.g. `$`, `%`) |
 | **Decimal Places** | 0 | Decimal places shown (0–4) |
-| **Abbreviate Numbers (K/M)** | Off | Abbreviates 1,000 → 1K, 1,000,000 → 1M |
+| **Abbreviate Numbers (K/M)** | Off | Abbreviates 1,000 → 1K, 1,000,000 → 1M, 1,000,000,000 → 1B |
 | **Y Axis Minimum / Maximum** | _(auto)_ | Override the Y axis range (validated numeric) |
 | **Logarithmic Scale** | Off | Switch the Y axis to log scale |
+| **Logarithmic Scale (X)** | Off | Switch the X axis to log scale — Scatter and Bubble charts only |
+| **Step Interpolation** | Off | Render as a stepped line instead of straight/smooth segments — Line and Area charts only |
 | **Show Grid Lines** | On | Toggle grid lines |
 | **X Label Rotation** | 0° | Degrees to rotate X axis labels |
 | **X Axis Type** | Auto-detect | Auto-detect / Category / Time (dates) |
@@ -235,11 +246,18 @@ The pane is organized into three pages — **Chart**, **Appearance**, and **Adva
 | **Forecast Periods** | 0 | Project the linear trendline up to 12 periods past the data |
 | **Reference Line** | None | Fixed value, Mean, or Median dashed line |
 | **Fixed Value / Line Color** | _(blank)_ / `#666666` | Value and color for the reference line |
+| **Right-axis series** | _(blank)_ | Comma-separated column names plotted against a second, right-hand Y axis — Bar, Line, Area only |
+| **Right axis label / Log Scale (Right Axis)** | _(blank)_ / Off | Caption and optional log scale for the right axis |
+| **Error Bar Type** | None | None, Custom column (±), Std Dev (computed), or Std Error of Mean (computed) — Bar, Line, Area only |
+| **Error value column** | _(blank)_ | Column holding the per-row ± margin — only used when Error Bar Type is Custom |
+| **Bracket pairs** (Significance Brackets) | _(blank)_ | Newline-delimited `col1,col2,label` (or a JSON array) — draws an annotation bracket between two bar categories, e.g. `GroupA,GroupB,*` — Bar chart only |
 | **Show Filters to Viewers** | Off | Filter bar for page visitors in view mode |
 | **Details on Demand** | Off | Clicking a chart element shows its underlying rows |
+| **Overlay Data Points on Bars** | Off | Show individual value markers on top of bars — Bar, Horizontal Bar only |
+| **Show Bubble Size Legend** | Off | Small/medium/large size key for the Bubble chart |
 | **Threshold Value / Direction / Color** | _(off)_ / Below / `#d13438` | Highlight values crossing a threshold |
-| **Auto-Refresh Interval** | 0 (off) | Reload network sources every N minutes |
-| **Cache API Results** | 0 (off) | Cache REST/Graph responses for N minutes per session |
+| **Auto-Refresh Interval** | 0 (off) | Reload network sources every N minutes — disabled for the Upload File source |
+| **Cache API Results** | 0 (off) | Cache REST/Graph responses for N minutes per session — only applies to the REST API and Microsoft Graph sources |
 
 ### Inline Advanced Options panel (while editing)
 
@@ -307,7 +325,7 @@ node sample-data/test-api-server.js
 smart-data-visualization/
 ├── config/
 │   ├── config.json               # Bundle entry points + localization
-│   ├── package-solution.json     # Solution ID, version, Graph permission requests
+│   ├── package-solution.json     # Solution ID, version
 │   └── serve.json                # Local dev server config
 ├── mockups/                      # Screenshot guide HTML
 ├── sample-data/                  # Test data files (not deployed)
@@ -362,7 +380,7 @@ smart-data-visualization/
 - **"Scatter and bubble charts need numeric values…"** — the mapped X or Y column contains no numbers. Pick a numeric column in the Column Mapping panel.
 - **Microsoft Graph source returns 401/403** — the Graph permission request has not been approved, or your endpoint needs a scope not listed in `package-solution.json`. See [Graph API Permissions](#graph-api-permissions).
 - **"This list has 5,000 or more items…"** — SharePoint returns at most 5,000 items per request. Filter the list with a view-backed approach or aggregate the data upstream.
-- **Arrows or accented characters look garbled in an exported CSV** — fixed in 2.0; exports now include a UTF-8 BOM. Re-export with the current version.
+- **Arrows or accented characters look garbled in an exported CSV** — fixed in 1.1.0; exports now include a UTF-8 BOM. Re-export with the current version.
 ---
 
 ## Limitations

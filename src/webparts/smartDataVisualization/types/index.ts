@@ -34,6 +34,12 @@ export type XAxisType = 'auto' | 'category' | 'time';
 
 export type TrendlineType = 'none' | 'linear' | 'movingAverage';
 
+export type SortDirection = 'asc' | 'desc';
+
+export type LegendPosition = 'top' | 'bottom' | 'left' | 'right';
+
+export type ThresholdDirection = 'above' | 'below';
+
 export interface IDataSourceConfig {
   dataSourceType: DataSourceType;
   uploadedFileName: string;
@@ -73,7 +79,7 @@ export const PALETTES: Record<string, string[]> = {
   office:      ['#0078d4','#00b4d8','#107c10','#ffb900','#d13438','#8764b8','#038387','#e3008c','#004578','#69797e'],
   vibrant:     ['#e63946','#f4a261','#2a9d8f','#457b9d','#e9c46a','#264653','#a8dadc','#f77f00','#023e8a','#9b2226'],
   pastel:      ['#a8d8ea','#aa96da','#fcbad3','#ffffd2','#b5ead7','#ffdac1','#c7ceea','#e2f0cb','#ffb7b2','#ff9aa2'],
-  monochrome:  ['#2d2d2d','#555555','#777777','#999999','#aaaaaa','#bbbbbb','#cccccc','#dddddd','#555','#333'],
+  monochrome:  ['#2d2d2d','#555555','#777777','#999999','#aaaaaa','#bbbbbb','#cccccc','#dddddd','#444444','#eeeeee'],
   trafficLight:['#107c10','#bad80a','#ffb900','#f7630c','#d13438','#647687','#008299','#0078d4','#69797e','#323130'],
   warm:        ['#d13438','#e74856','#f7630c','#ca5010','#ffb900','#f0a30a','#da3b01','#ef6950','#fce100','#fff100'],
   cool:        ['#0078d4','#2b88d8','#00b4d8','#038387','#007a7a','#0d73dd','#086f68','#00bcf2','#008272','#004e8c'],
@@ -89,6 +95,9 @@ export const extractColumns = (rows: IChartRecord[]): string[] => {
   const columns: string[] = [];
   const scanCount = Math.min(rows.length, COLUMN_SCAN_ROWS);
   for (let i = 0; i < scanCount; i++) {
+    // Guard against non-object entries (e.g. a null in a REST API array) —
+    // Object.keys on those throws instead of just skipping the row.
+    if (rows[i] === null || typeof rows[i] !== 'object') continue;
     for (const key of Object.keys(rows[i])) {
       // Object values (SharePoint lookup/person fields, nested JSON) can't be
       // charted or displayed — they'd render as "[object Object]".
@@ -126,7 +135,13 @@ export const parseBookmarks = (json: string): IBookmark[] => {
   if (!json) return [];
   try {
     const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Reject malformed entries (hand-edited properties, imported page
+    // templates) — applying one would throw deep in the apply handler and
+    // unmount the whole web part for viewers.
+    return parsed.filter((b): b is IBookmark =>
+      !!b && typeof b === 'object' && typeof b.name === 'string' &&
+      !!b.state && typeof b.state === 'object');
   } catch {
     return [];
   }
@@ -139,12 +154,22 @@ export const fmt = (template: string, ...args: (string | number)[]): string =>
     return arg !== undefined ? String(arg) : match;
   });
 
+// Expand a 3-digit hex ('#abc') to 6-digit ('#aabbcc'). ChartRenderer builds
+// translucent fills by concatenating an alpha suffix directly onto these
+// colors (e.g. `${color}cc`), which only produces a valid 8-digit hex color
+// when the base is already 6 digits — a 3-digit override would silently
+// produce an invalid color that canvas ignores.
+const normalizeHexColor = (color: string): string => {
+  const m = /^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.exec(color);
+  return m ? `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}` : color;
+};
+
 export const resolveColors = (palette: string, seriesColors: string, count: number): string[] => {
   const base = PALETTES[palette] || PALETTES.office;
   const overrides = seriesColors ? seriesColors.split(',') : [];
   return Array.from({ length: count }, (_, i) => {
     const override = overrides[i] ? overrides[i].trim() : '';
-    return override || base[i % base.length];
+    return normalizeHexColor(override || base[i % base.length]);
   });
 };
 
@@ -194,10 +219,11 @@ export const supportsErrorBars = (chartType: ChartType): boolean =>
   chartType === 'bar' || chartType === 'horizontalBar' ||
   chartType === 'line' || chartType === 'area';
 
-// Chart types that support a secondary (right) Y axis
+// Chart types that support a secondary (right) Y axis. horizontalBar is
+// excluded — its value axis is x, so a second value axis would need a second
+// x scale, not the y1 scale ChartRenderer implements.
 export const supportsDualAxis = (chartType: ChartType): boolean =>
-  chartType === 'bar' || chartType === 'horizontalBar' ||
-  chartType === 'line' || chartType === 'area';
+  chartType === 'bar' || chartType === 'line' || chartType === 'area';
 
 // Chart types that support data point overlay
 export const supportsDataPointOverlay = (chartType: ChartType): boolean =>

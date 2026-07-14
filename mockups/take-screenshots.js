@@ -56,6 +56,8 @@ const FRAME_FILENAMES = [
   'feature-palettes.png',           // Feature — Color Palettes
   'feature-data-table.png',         // Feature — Data Table
   'datasource-sharepoint-list.png', // Feature — SharePoint List
+  'graphapi-datapath.png',          // Feature — Microsoft Graph, Data Path mapped to JSON response
+  'admin-graph-consent.png',        // Admin — API access, Graph scopes pending approval
   'settings-chart-settings.png',    // Settings — Property Pane: Chart Settings
   'settings-data-labels.png',       // Settings — Property Pane: Data Labels & Axes
   'chart-kpi.png',                  // Chart 10 — KPI Tile (v2.0)
@@ -71,6 +73,7 @@ const FRAME_FILENAMES = [
   'feature-details-on-demand.png',  // Feature — Details on Demand (v2.0)
   'feature-advanced-options.png',   // Feature — Advanced Options panel (v2.0)
   'settings-advanced.png',          // Settings — Property Pane: Advanced page (v2.0)
+  'showcase-it-ops-page.png',       // Showcase — finished multi-web-part IT ops page
 ];
 
 // ── Main ─────────────────────────────────────────────────────────────────────

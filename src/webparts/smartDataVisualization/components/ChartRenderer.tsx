@@ -124,6 +124,19 @@ interface IChartRendererProps {
   showBubbleSizeLegend?: boolean;
 }
 
+// Constructing an Intl.NumberFormat is the expensive part of formatting a
+// number — formatValue is called once per data label on every draw, so cache
+// one instance per distinct `decimals` value instead of rebuilding it every call.
+const numberFormatCache = new Map<number, Intl.NumberFormat>();
+const getNumberFormat = (decimals: number): Intl.NumberFormat => {
+  let fmt = numberFormatCache.get(decimals);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    numberFormatCache.set(decimals, fmt);
+  }
+  return fmt;
+};
+
 const formatValue = (
   val: number,
   prefix: string,
@@ -134,13 +147,11 @@ const formatValue = (
   let n = val;
   let abbrev = '';
   if (abbreviate) {
-    if (Math.abs(val) >= 1e6) { n = val / 1e6; abbrev = 'M'; }
+    if (Math.abs(val) >= 1e9) { n = val / 1e9; abbrev = 'B'; }
+    else if (Math.abs(val) >= 1e6) { n = val / 1e6; abbrev = 'M'; }
     else if (Math.abs(val) >= 1e3) { n = val / 1e3; abbrev = 'K'; }
   }
-  const formatted = n.toLocaleString(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
+  const formatted = getNumberFormat(decimals).format(n);
   return `${prefix}${formatted}${abbrev}${suffix}`;
 };
 
@@ -198,6 +209,33 @@ const linearTrend = (values: (number | null)[], extendBy: number = 0): (number |
   return Array.from({ length: outLength }, (_, i) => m * i + b);
 };
 
+// Least-squares line over real timestamps rather than row index — required on
+// a time axis, where rows are often irregularly spaced (e.g. SharePoint list
+// data), so a fit over index position would have the wrong slope per unit time.
+// Rows with an unparseable date or a null Y value are excluded from the fit.
+const linearTrendOverTime = (
+  rows: IChartRecord[],
+  xCol: string,
+  values: (number | null)[]
+): { points: Array<{ x: number; y: number }>; fitted: (number | null)[] } => {
+  const timestamps = rows.map(row => toTimestamp(row[xCol]));
+  const pts: Array<[number, number]> = [];
+  timestamps.forEach((t, i) => { if (t !== null && values[i] !== null) pts.push([t, values[i] as number]); });
+  if (pts.length < 2) return { points: [], fitted: values.map(() => null) };
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (const [x, y] of pts) { sx += x; sy += y; sxy += x * y; sxx += x * x; }
+  const n = pts.length;
+  const denom = n * sxx - sx * sx;
+  if (!denom) return { points: [], fitted: values.map(() => null) };
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  const points = timestamps
+    .filter((t): t is number => t !== null)
+    .map(t => ({ x: t, y: m * t + b }));
+  const fitted = timestamps.map(t => (t !== null ? m * t + b : null));
+  return { points, fitted };
+};
+
 // '#rrggbb' + 0..1 alpha → 8-digit hex
 const hexWithAlpha = (hex: string, alpha: number): string => {
   const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255).toString(16);
@@ -217,6 +255,13 @@ const movingAverage = (values: (number | null)[], window: number): (number | nul
       .filter((v): v is number => v !== null);
     return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
   });
+};
+
+// Derives an export filename from the chart title so multiple web parts on a
+// page don't all export as "chart.png"/"data.csv".
+const sanitizeFilename = (title: string, fallback: string): string => {
+  const cleaned = title.trim().replace(/[\\/:*?"<>|]/g, '').slice(0, 80);
+  return cleaned || fallback;
 };
 
 const downloadUrl = (url: string, filename: string) => {
@@ -297,15 +342,28 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   const chartRef = React.useRef<any>(null);
   const { xColumn, yColumns, labelColumn, sizeColumn } = columnConfig;
 
-  const handleExportPng = () => {
-    if (!chartRef.current) return;
-    downloadUrl(chartRef.current.toBase64Image('image/png', 1), 'chart.png');
+  // Chart.js draws on a transparent canvas. Without an opaque backing fill, a
+  // JPEG export comes out black (JPEG has no alpha channel) and a dark-theme
+  // PNG export is unreadable text-on-transparency when pasted into a white
+  // document — so composite onto an offscreen canvas with a background first.
+  const exportImage = (mime: string, quality: number, filename: string) => {
+    const src = chartRef.current?.canvas as HTMLCanvasElement | undefined;
+    if (!src) return;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = isDarkTheme ? '#1b1a19' : '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(src, 0, 0);
+    downloadUrl(out.toDataURL(mime, quality), filename);
   };
 
-  const handleExportJpeg = () => {
-    if (!chartRef.current) return;
-    downloadUrl(chartRef.current.toBase64Image('image/jpeg', 0.92), 'chart.jpg');
-  };
+  const exportFilename = (ext: string) => `${sanitizeFilename(chartTitle, 'chart')}.${ext}`;
+
+  const handleExportPng = () => exportImage('image/png', 1, exportFilename('png'));
+  const handleExportJpeg = () => exportImage('image/jpeg', 0.92, exportFilename('jpg'));
 
   const handleExportCsv = () => {
     const sanitized = data.map(row => {
@@ -318,7 +376,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     // characters (e.g. "→" renders as "â†'")
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    downloadUrl(url, 'data.csv');
+    downloadUrl(url, exportFilename('csv'));
     // Defer revocation — revoking synchronously can abort the download in some browsers
     setTimeout(() => URL.revokeObjectURL(url), 0);
   };
@@ -327,7 +385,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     const ws = XLSX.utils.json_to_sheet(data as object[]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    XLSX.writeFile(wb, 'data.xlsx');
+    XLSX.writeFile(wb, exportFilename('xlsx'));
   };
 
   if (!data.length) {
@@ -456,16 +514,82 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     return dateLike.length / sample.length >= 0.7;
   })();
 
+  // A forced time axis over X values that don't parse as dates at all (e.g. a
+  // plain numeric column like "Year", or Excel serials that predate cellDates
+  // conversion) drops every row and silently blanks the chart — explain instead.
+  if (xIsTime && !data.some(row => toTimestamp(row[xColumn]) !== null)) {
+    return (
+      <div className={styles.noDataMessage}>
+        {fmt(strings.TimeAxisUnparseableWarning, xColumn)}
+      </div>
+    );
+  }
+
+  // Partitions rows by a column's distinct values in one pass (first-appearance
+  // order) — used to split scatter/bubble points into one dataset per
+  // colorByColumn category. Shared by the builders below and resolveSourceRow
+  // so a click resolves against the exact same category order/membership the
+  // chart was drawn with, and so partitioning stays O(n) instead of O(n × categories).
+  const groupByCategory = (col: string): { categories: string[]; groups: Map<string, IChartRecord[]> } => {
+    const categories: string[] = [];
+    const groups = new Map<string, IChartRecord[]>();
+    for (const row of data) {
+      const c = String(row[col] ?? '');
+      let group = groups.get(c);
+      if (!group) { group = []; groups.set(c, group); categories.push(c); }
+      group.push(row);
+    }
+    return { categories, groups };
+  };
+
+  // Row indexes (into `data`) that survive the time-axis date filter, in the
+  // order they're plotted — mirrors the filter in buildBarLineData's toPoints.
+  const timeRowIndexes = xIsTime
+    ? data
+        .map((row, i) => ({ i, t: toTimestamp(row[xColumn]) }))
+        .filter((p): p is { i: number; t: number } => p.t !== null)
+        .map(p => p.i)
+    : undefined;
+
+  // Resolves a Chart.js element's (datasetIndex, index) back to the underlying
+  // source row. Several builders filter or partition rows — pie drops null-Y
+  // rows, scatter/bubble drop non-numeric points, colorBy splits into one
+  // dataset per category, and the time axis drops unparseable dates — so the
+  // element index does not always equal the row's position in `data`. This
+  // reproduces each builder's exact filter so the mapping stays correct.
+  const resolveSourceRow = (datasetIndex: number, index: number): IChartRecord | undefined => {
+    if (isPieOrDoughnut(chartType)) {
+      const validRows = data.filter(row => numOrNull(row[validYColumns[0]]) !== null);
+      return validRows[index];
+    }
+    if (isScatterOrBubble(chartType)) {
+      if (colorByColumn) {
+        const { categories, groups } = groupByCategory(colorByColumn);
+        const cat = categories[datasetIndex];
+        const filtered = (groups.get(cat) || [])
+          .filter(row => numOrNull(row[xColumn]) !== null && numOrNull(row[validYColumns[0]]) !== null);
+        return filtered[index];
+      }
+      const col = chartType === 'bubble' ? validYColumns[0] : (validYColumns[datasetIndex] || validYColumns[0]);
+      const filtered = data.filter(row => numOrNull(row[xColumn]) !== null && numOrNull(row[col]) !== null);
+      return filtered[index];
+    }
+    if (xIsTime && timeRowIndexes) return data[timeRowIndexes[index]];
+    return data[index];
+  };
+
   // Notify Dynamic Data consumers when the user clicks a chart element.
-  // Binned/derived charts don't map elements back to source rows, so skip them.
+  // Binned/derived charts don't map elements back to a single source row, so skip them.
   const clickableType = chartType !== 'histogram' && chartType !== 'boxplot' &&
-    chartType !== 'treemap' && chartType !== 'heatmap';
+    chartType !== 'treemap' && chartType !== 'heatmap' && chartType !== 'violin' && chartType !== 'beforeAfter';
   const handleChartClick = (_evt: unknown, elements: Array<{ datasetIndex: number; index: number }>): void => {
     if (!elements?.length || !onItemSelected || !clickableType) return;
     const { datasetIndex, index } = elements[0];
-    if (datasetIndex >= validYColumns.length) return; // trend/reference datasets are not selectable
-    const series = validYColumns[datasetIndex] || validYColumns[0] || '';
-    const row = data[index];
+    const colorByPartitioned = isScatterOrBubble(chartType) && !!colorByColumn;
+    const datasetCount = colorByPartitioned ? groupByCategory(colorByColumn).categories.length : validYColumns.length;
+    if (datasetIndex >= datasetCount) return; // trend/reference datasets are not selectable
+    const series = colorByPartitioned ? (validYColumns[0] || '') : (validYColumns[datasetIndex] || validYColumns[0] || '');
+    const row = resolveSourceRow(datasetIndex, index);
     if (!row) return;
     const categoryCol = isPieOrDoughnut(chartType) ? (labelColumn || xColumn) : xColumn;
     onItemSelected({
@@ -475,13 +599,18 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     });
   };
 
-  // Spotfire-style tooltip extras: append chosen columns from the hovered row
+  // Spotfire-style tooltip extras: append chosen columns from the hovered row.
+  // Binned/grouped types (histogram bins, boxplot/violin groups, before-after
+  // row pairs) have no single source row per element, so extras are skipped.
   const tooltipCols = tooltipColumns
     ? tooltipColumns.split(',').map(s => s.trim()).filter(Boolean)
     : [];
-  const tooltipCallbacks = tooltipCols.length ? {
-    afterBody: (items: Array<{ dataIndex: number }>): string[] => {
-      const row = items.length ? data[items[0].dataIndex] : undefined;
+  const rowMappedType = chartType !== 'histogram' && chartType !== 'boxplot' && chartType !== 'violin' &&
+    chartType !== 'treemap' && chartType !== 'heatmap' && chartType !== 'beforeAfter';
+  const tooltipCallbacks = (tooltipCols.length && rowMappedType) ? {
+    afterBody: (items: Array<{ dataIndex: number; datasetIndex: number }>): string[] => {
+      if (!items.length) return [];
+      const row = resolveSourceRow(items[0].datasetIndex, items[0].dataIndex);
       if (!row) return [];
       return tooltipCols
         .filter(c => c in row)
@@ -492,8 +621,11 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   const y2ColSet = new Set(
     (y2Columns || '').split(',').map(s => s.trim()).filter(Boolean)
   );
+  // horizontalBar excluded: its value axis is x (indexAxis:'y'), so a 'y1' scale
+  // would be a second CATEGORY axis, not a second value axis — dual axis only
+  // makes sense on the vertical chart types.
   const hasDualAxis = y2ColSet.size > 0 &&
-    ['bar', 'horizontalBar', 'line', 'area'].indexOf(chartType) >= 0;
+    ['bar', 'line', 'area'].indexOf(chartType) >= 0;
 
   const yAxisConfig: any = {
     stacked,
@@ -505,11 +637,14 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     title: { display: !!yAxisLabel, text: yAxisLabel, color: textColor },
   };
 
-  const logScaleXApplies = !!logScaleX && ['scatter', 'bubble', 'histogram'].indexOf(chartType) >= 0;
-  const numericXCharts = ['scatter', 'bubble', 'histogram'];
+  // xAxisConfig only ever feeds cartesianOptions (bar/line/area/histogram) —
+  // scatter and bubble use their own numeric scale config in scatterOptions
+  // below. None of the cartesianOptions chart types have a numeric X: bar/
+  // line/area are category-or-time, and histogram bins are category labels
+  // ("0–<10") that a logarithmic scale would parse as NaN and blank the chart.
   const xAxisConfig: any = {
     stacked,
-    type: logScaleXApplies ? 'logarithmic' : xIsTime ? 'time' : numericXCharts.indexOf(chartType) < 0 ? 'category' : undefined,
+    type: xIsTime ? 'time' : 'category',
     grid: { display: showGridLines, color: gridColor },
     title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
     ticks: {
@@ -590,21 +725,25 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         : undefined;
       const renderedAsBar = override ? override === 'bar' : (ct === 'bar' || ct === 'horizontalBar');
       const values = data.map(row => numOrNull(row[col]));
+      const points = xIsTime ? toPoints(values) : undefined;
+      // Threshold colors must align with what's actually rendered — on the time
+      // axis that's the filtered `points` list, not the unfiltered per-row `values`.
+      const seriesValues = points ? points.map(p => p.y) : values;
 
       let backgroundColor: string | string[] = renderedAsBar ? `${color}cc` : `${color}40`;
       let pointBackgroundColor: string | string[] | undefined;
       if (threshold !== undefined) {
         if (renderedAsBar) {
-          backgroundColor = values.map(v => overThreshold(v) ? `${thresholdColor}cc` : `${color}cc`);
+          backgroundColor = seriesValues.map(v => overThreshold(v) ? `${thresholdColor}cc` : `${color}cc`);
         } else {
-          pointBackgroundColor = values.map(v => overThreshold(v) ? thresholdColor : color);
+          pointBackgroundColor = seriesValues.map(v => overThreshold(v) ? thresholdColor : color);
         }
       }
 
       return {
         label: col,
         type: override,
-        data: xIsTime ? toPoints(values) : values,
+        data: points ?? values,
         backgroundColor,
         pointBackgroundColor,
         borderColor: color,
@@ -639,17 +778,27 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     if (trendline === 'linear' || trendline === 'movingAverage') {
       validYColumns.forEach((col, i) => {
         const values = data.map(row => numOrNull(row[col]));
-        const trendValues = trendline === 'linear'
-          ? linearTrend(values, forecastExtra)
-          : movingAverage(values, trendWindow || 3);
-        const r2 = trendline === 'linear' ? computeR2(values, trendValues) : null;
+        let trendData: any;
+        let r2: number | null = null;
+        if (trendline === 'linear' && xIsTime) {
+          const { points, fitted } = linearTrendOverTime(data, xColumn, values);
+          trendData = points;
+          r2 = computeR2(values, fitted);
+        } else if (trendline === 'linear') {
+          const trendValues = linearTrend(values, forecastExtra);
+          trendData = trendValues;
+          r2 = computeR2(values, trendValues);
+        } else {
+          const trendValues = movingAverage(values, trendWindow || 3);
+          trendData = xIsTime ? toPoints(trendValues.slice(0, data.length)) : trendValues;
+        }
         const trendLabel = r2 !== null
           ? `${col}${strings.TrendSuffix} (R²=${r2.toFixed(2)})`
           : `${col}${strings.TrendSuffix}`;
         datasets.push({
           label: trendLabel,
           type: 'line',
-          data: xIsTime ? toPoints(trendValues.slice(0, data.length)) : trendValues,
+          data: trendData,
           borderColor: colors[i],
           borderDash: [6, 4],
           borderWidth: 2,
@@ -734,17 +883,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     });
     // Spotfire-style "color by": partition points into one dataset per category
     if (colorByColumn && validYColumns.length) {
-      const categories: string[] = [];
-      for (const row of data) {
-        const c = String(row[colorByColumn] ?? '');
-        if (categories.indexOf(c) < 0) categories.push(c);
-      }
+      const { categories, groups } = groupByCategory(colorByColumn);
       const catColors = resolveColors(colorPalette, '', categories.length);
       return {
         datasets: categories.map((cat, i) => ({
           label: cat,
-          data: data
-            .filter(row => String(row[colorByColumn] ?? '') === cat)
+          data: (groups.get(cat) || [])
             .map(row => mkPoint(row, validYColumns[0]))
             .filter((p): p is typeof p & { x: number; y: number } => p.x !== null && p.y !== null),
           backgroundColor: `${catColors[i]}80`,
@@ -778,16 +922,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
       .filter((p): p is typeof p & { x: number; y: number; r: number } => p.x !== null && p.y !== null);
 
     if (colorByColumn) {
-      const categories: string[] = [];
-      for (const row of data) {
-        const c = String(row[colorByColumn] ?? '');
-        if (categories.indexOf(c) < 0) categories.push(c);
-      }
+      const { categories, groups } = groupByCategory(colorByColumn);
       const catColors = resolveColors(colorPalette, '', categories.length);
       return {
         datasets: categories.map((cat, i) => ({
           label: cat,
-          data: toBubblePoints(data.filter(row => String(row[colorByColumn] ?? '') === cat)),
+          data: toBubblePoints(groups.get(cat) || []),
           backgroundColor: `${catColors[i]}80`,
           borderColor: catColors[i],
         })),
@@ -976,12 +1116,14 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     if (chartType !== 'heatmap') return undefined;
     const xCats: string[] = [];
     const yCats: string[] = [];
+    const xSeen = new Set<string>();
+    const ySeen = new Set<string>();
     const points: Array<{ x: string; y: string; v: number }> = [];
     for (const row of data) {
       const x = String(row[xColumn] ?? '');
       const y = String(row[labelColumn] ?? '');
-      if (xCats.indexOf(x) < 0) xCats.push(x);
-      if (yCats.indexOf(y) < 0) yCats.push(y);
+      if (!xSeen.has(x)) { xSeen.add(x); xCats.push(x); }
+      if (!ySeen.has(y)) { ySeen.add(y); yCats.push(y); }
       points.push({ x, y, v: numOrNull(row[validYColumns[0]]) ?? 0 });
     }
     const maxAbs = Math.max(...points.map(p => Math.abs(p.v)), 1);
@@ -1026,7 +1168,7 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     ...baseOptions,
     plugins: {
       ...baseOptions.plugins,
-      legend: { display: showLegend, position: legendPos },
+      legend: { display: showLegend, position: legendPos, labels: { color: textColor } },
       tooltip: { mode: 'point', intersect: true, callbacks: tooltipCallbacks },
     },
   };
@@ -1116,7 +1258,9 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     ...baseOptions,
     scales: {
       x: {
-        type: logScale ? 'logarithmic' : 'linear',
+        // logScaleX is the dedicated X-axis toggle; logScale (the Y toggle) must
+        // not also drive the X axis here.
+        type: logScaleX ? 'logarithmic' : 'linear',
         grid: { display: showGridLines, color: gridColor },
         ticks: { color: textColor },
         title: { display: !!xAxisLabel, text: xAxisLabel, color: textColor },
@@ -1140,6 +1284,8 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
     ...baseOptions,
     scales: {
       r: {
+        min: axisMin,
+        max: axisMax,
         grid: { display: showGridLines, color: gridColor },
         angleLines: { color: gridColor },
         pointLabels: { color: textColor },
@@ -1164,6 +1310,12 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
         if (!dataset._errorValues) return;
         const meta = chart.getDatasetMeta(di);
         if (meta.hidden) return;
+        const yScale = chart.scales[dataset.yAxisID || 'y'] || chart.scales.y;
+        const xScale = chart.scales.x;
+        if (!yScale || !xScale) return;
+        // Pixel length from a raw error magnitude is only meaningful on a
+        // linear scale — on a log scale it would draw arbitrary-length whiskers.
+        if ((isHoriz ? xScale : yScale).type === 'logarithmic') return;
         ctx.save();
         ctx.strokeStyle = typeof dataset.borderColor === 'string' ? dataset.borderColor : '#666666';
         ctx.lineWidth = 1.5;
@@ -1173,9 +1325,6 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
           if (!err || err <= 0) return;
           const xPx = el.x;
           const yPx = el.y;
-          const yScale = chart.scales[dataset.yAxisID || 'y'] || chart.scales.y;
-          const xScale = chart.scales.x;
-          if (!yScale || !xScale) return;
           const errPx = isHoriz
             ? Math.abs(xScale.getPixelForValue(err) - xScale.getPixelForValue(0))
             : Math.abs(yScale.getPixelForValue(err) - yScale.getPixelForValue(0));
@@ -1218,8 +1367,10 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
       })
       .filter((p): p is { col1: string; col2: string; label: string } => p !== null);
   })();
-  const significancePlugin: any = sigPairs.length > 0 &&
-    (chartType === 'bar' || chartType === 'horizontalBar') ? {
+  // horizontalBar swaps axes (indexAxis:'y') — categories are on y, values on
+  // x — so the bracket math below (built for a category-x/value-y layout)
+  // would draw nothing there. Vertical bar only.
+  const significancePlugin: any = sigPairs.length > 0 && chartType === 'bar' ? {
     id: 'significanceBrackets',
     afterDraw(chart: any) {
       const ctx = chart.ctx;
@@ -1405,4 +1556,9 @@ const ChartRenderer: React.FC<IChartRendererProps> = (props) => {
   );
 };
 
-export default ChartRenderer;
+// The parent's `data` prop is already produced via useMemo, and `columnConfig`
+// passes through unchanged outside of count-aggregation/drill-down — so for
+// most renders (e.g. toggling the config panel) these props keep the same
+// identity, and memo lets those renders skip rebuilding every dataset/option
+// object here.
+export default React.memo(ChartRenderer);

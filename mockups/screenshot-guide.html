@@ -279,6 +279,7 @@
   <a href="#radar">Radar</a>
   <a href="#features">Features</a>
   <a href="#settings">Settings</a>
+  <a href="#showcase">Showcase</a>
 </nav>
 
 <div class="content">
@@ -319,9 +320,12 @@
       <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Color Palettes</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-palettes.png</td></tr>
       <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Data Table</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">feature-data-table.png</td></tr>
       <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">SharePoint List config</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">datasource-sharepoint-list.png</td></tr>
+      <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Features</td><td style="padding:5px 10px;border:1px solid #edebe9;">Microsoft Graph — Data Path mapping</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">graphapi-datapath.png</td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Admin</td><td style="padding:5px 10px;border:1px solid #edebe9;">API access — Graph scopes pending approval</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">admin-graph-consent.png</td></tr>
       <tr><td style="padding:5px 10px;border:1px solid #edebe9;">Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;">Property Pane — Chart Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">settings-chart-settings.png</td></tr>
       <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Settings</td><td style="padding:5px 10px;border:1px solid #edebe9;">Property Pane — Data Labels &amp; Axes</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">settings-data-labels.png</td></tr>
       <tr><td style="padding:5px 10px;border:1px solid #edebe9;color:#797775;" colspan="3"><em>chart-gallery.png — capture the two-column grid in the "Chart Types" section showing all 8 smaller charts together (Charts 1–8). Crop tightly around the grid.</em></td></tr>
+      <tr style="background:#faf9f8;"><td style="padding:5px 10px;border:1px solid #edebe9;">Showcase</td><td style="padding:5px 10px;border:1px solid #edebe9;">Finished Page — IT Operations Dashboard</td><td style="padding:5px 10px;border:1px solid #edebe9;font-family:monospace;">showcase-it-ops-page.png</td></tr>
     </tbody>
   </table>
 </div>
@@ -769,6 +773,123 @@
         </div>
       </div>
       <div style="margin-top:8px;"><button class="btn-primary">Load Data</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Microsoft Graph source + Data Path -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Feature</span>
+    <span class="title">Microsoft Graph — Data Path mapped to the JSON response</span>
+    <span class="hint">Graph API Path: /users · Data Path: value</span>
+  </div>
+  <div class="webpart">
+    <div class="edit-panel">
+      <div class="section-header">Data Source</div>
+      <div class="source-grid" style="grid-template-columns:repeat(5,1fr);">
+        <div class="source-card"><span class="source-icon">📁</span><span class="source-label">Upload File</span></div>
+        <div class="source-card"><span class="source-icon">📋</span><span class="source-label">SharePoint List</span></div>
+        <div class="source-card"><span class="source-icon">🔗</span><span class="source-label">SharePoint File</span></div>
+        <div class="source-card"><span class="source-icon">🌐</span><span class="source-label">REST API</span></div>
+        <div class="source-card selected"><span class="source-icon">🪐</span><span class="source-label">Microsoft Graph</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;">
+        <div>
+          <div class="field-group">
+            <label>Graph API Path</label>
+            <input type="text" value="/users?$select=displayName,department,accountEnabled" readonly>
+            <span class="help-text">Relative Microsoft Graph path. Requires Graph permissions approved by an administrator — all other data sources work without them.</span>
+          </div>
+          <div class="field-group">
+            <label>Data Path (optional)</label>
+            <input type="text" value="value" readonly>
+            <span class="help-text">Dot-separated path to the array in the JSON response. Leave blank if the root is an array.</span>
+          </div>
+          <div style="margin-top:8px;"><button class="btn-primary">Load Data</button></div>
+        </div>
+        <div>
+          <div style="background:#1e1e1e;border-radius:4px;padding:12px 14px;font-family:Consolas,'Courier New',monospace;font-size:11.5px;color:#d4d4d4;line-height:1.65;">
+            <div style="color:#6a9955;">// GET https://graph.microsoft.com/v1.0/users</div>
+            <div>{</div>
+            <div style="padding-left:14px;">"@odata.context": <span style="color:#ce9178;">"...$metadata#users"</span>,</div>
+            <div style="padding-left:14px;"><span style="background:#0078d4;color:#fff;border-radius:2px;padding:0 3px;">"value"</span>: [</div>
+            <div style="padding-left:28px;">{ <span style="color:#9cdcfe;">"displayName"</span>: <span style="color:#ce9178;">"Alex Chen"</span>, <span style="color:#9cdcfe;">"department"</span>: <span style="color:#ce9178;">"IT Operations"</span>, … },</div>
+            <div style="padding-left:28px;">{ <span style="color:#9cdcfe;">"displayName"</span>: <span style="color:#ce9178;">"Priya Nair"</span>, … },</div>
+            <div style="padding-left:28px;color:#797775;">… 340 more</div>
+            <div style="padding-left:14px;">]</div>
+            <div>}</div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#0078d4;font-weight:600;">↑ "value" holds the array to chart — that's exactly what the Data Path field points to.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin consent for Graph scopes -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Admin</span>
+    <span class="title">SharePoint Admin Center — API Access (Graph scopes pending approval)</span>
+    <span class="hint">One-time tenant admin step, done once before the Microsoft Graph source can be used</span>
+  </div>
+  <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#faf9f8;">
+    <div style="background:#004578;color:#fff;padding:10px 20px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">☁️</span> SharePoint admin center
+    </div>
+    <div style="padding:16px 24px 4px;font-size:12px;color:#605e5c;">
+      Advanced&nbsp;&nbsp;›&nbsp;&nbsp;<strong style="color:#323130;">API access</strong>
+    </div>
+    <div style="padding:8px 24px 24px;">
+      <div style="font-size:20px;font-weight:600;color:#323130;margin-bottom:4px;">API access</div>
+      <p style="font-size:13px;color:#605e5c;margin-bottom:16px;max-width:760px;">
+        Manage requests for access to APIs in your organization. SharePoint Framework solutions request access to
+        the APIs they need — approve requests below to allow that access.
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #edebe9;">
+        <thead>
+          <tr style="border-bottom:1px solid #edebe9;">
+            <th style="text-align:left;padding:10px 14px;font-weight:600;color:#605e5c;">Resource</th>
+            <th style="text-align:left;padding:10px 14px;font-weight:600;color:#605e5c;">Permission</th>
+            <th style="text-align:left;padding:10px 14px;font-weight:600;color:#605e5c;">Type</th>
+            <th style="text-align:left;padding:10px 14px;font-weight:600;color:#605e5c;">Requested by</th>
+            <th style="padding:10px 14px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #edebe9;">
+            <td style="padding:10px 14px;">Microsoft Graph</td>
+            <td style="padding:10px 14px;font-family:Consolas,'Courier New',monospace;">User.Read.All</td>
+            <td style="padding:10px 14px;">Application</td>
+            <td style="padding:10px 14px;">Smart Data Visualization</td>
+            <td style="padding:8px 14px;text-align:right;white-space:nowrap;">
+              <button class="btn-primary" style="padding:5px 14px;">Approve</button>
+              <button class="btn-secondary" style="padding:5px 14px;">Reject</button>
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid #edebe9;background:#faf9f8;">
+            <td style="padding:10px 14px;">Microsoft Graph</td>
+            <td style="padding:10px 14px;font-family:Consolas,'Courier New',monospace;">Group.Read.All</td>
+            <td style="padding:10px 14px;">Application</td>
+            <td style="padding:10px 14px;">Smart Data Visualization</td>
+            <td style="padding:8px 14px;text-align:right;white-space:nowrap;">
+              <button class="btn-primary" style="padding:5px 14px;">Approve</button>
+              <button class="btn-secondary" style="padding:5px 14px;">Reject</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 14px;">Microsoft Graph</td>
+            <td style="padding:10px 14px;font-family:Consolas,'Courier New',monospace;">Reports.Read.All</td>
+            <td style="padding:10px 14px;">Application</td>
+            <td style="padding:10px 14px;">Smart Data Visualization</td>
+            <td style="padding:8px 14px;text-align:right;white-space:nowrap;">
+              <span style="display:inline-flex;align-items:center;gap:5px;color:#107c10;font-weight:600;font-size:12px;margin-right:8px;">✓ Approved</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:#797775;margin-top:10px;">Exact scopes vary by the Graph endpoint each web part instance is pointed at — an admin only needs to approve what's actually requested.</p>
     </div>
   </div>
 </div>
@@ -1505,6 +1626,66 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 5 — SHOWCASE
+══════════════════════════════════════════════════════════ -->
+<h2 class="section-title" id="showcase">Showcase</h2>
+<p class="section-desc">Several web part instances composed together on one published SharePoint page.</p>
+
+<!-- Finished multi-web-part page -->
+<div class="screenshot-frame">
+  <div class="screenshot-label">
+    <span class="badge">Showcase</span>
+    <span class="title">Finished Page — IT Operations Dashboard (6 web parts)</span>
+    <span class="hint">View mode, one page, mixed sources (Graph, REST, SharePoint list)</span>
+  </div>
+  <div style="background:#fff;padding:16px 24px 20px;border-bottom:1px solid #edebe9;">
+    <div style="font-size:12px;color:#605e5c;margin-bottom:6px;">Contoso Intranet&nbsp;&nbsp;›&nbsp;&nbsp;IT Operations</div>
+    <div style="font-size:26px;font-weight:600;color:#323130;">IT Operations Dashboard</div>
+    <div style="font-size:13px;color:#605e5c;margin-top:4px;">Live incident, device, and ticket metrics — auto-refreshes every 15 minutes</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px 24px 24px;background:#f3f2f1;">
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:10px;">Open Incidents</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 0;">
+        <div style="font-size:44px;font-weight:700;color:#d13438;line-height:1;">42</div>
+        <div style="font-size:11px;color:#797775;margin-top:6px;">Count • Priority ≤ P2</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:10px;">Devices Compliant</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 0;">
+        <div style="font-size:44px;font-weight:700;color:#107c10;line-height:1;">94%</div>
+        <div style="font-size:11px;color:#797775;margin-top:6px;">Avg • 1,842 devices</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:8px;">Incidents by Priority</div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="c-ito-priority"></canvas></div>
+    </div>
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:8px;">Devices by OS</div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="c-ito-os"></canvas></div>
+    </div>
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:8px;">Ticket Volume — Last 14 Days</div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="c-ito-tickets"></canvas></div>
+    </div>
+    <div style="background:#fff;border:1px solid #edebe9;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#605e5c;margin-bottom:8px;">Top Assignees — Open Tickets</div>
+      <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;">
+        <thead><tr><th style="text-align:left;padding:5px 6px;border-bottom:2px solid #edebe9;">Agent</th><th style="text-align:right;padding:5px 6px;border-bottom:2px solid #edebe9;">Open</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:5px 6px;border-bottom:1px solid #edebe9;">Morgan Reyes</td><td style="text-align:right;padding:5px 6px;border-bottom:1px solid #edebe9;">14</td></tr>
+          <tr><td style="padding:5px 6px;border-bottom:1px solid #edebe9;">Sam Patel</td><td style="text-align:right;padding:5px 6px;border-bottom:1px solid #edebe9;">11</td></tr>
+          <tr><td style="padding:5px 6px;border-bottom:1px solid #edebe9;">Jordan Lee</td><td style="text-align:right;padding:5px 6px;border-bottom:1px solid #edebe9;">9</td></tr>
+          <tr><td style="padding:5px 6px;">Casey Kim</td><td style="text-align:right;padding:5px 6px;">8</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </div><!-- .content -->
 
 <script>
@@ -1900,6 +2081,73 @@ new Chart(document.getElementById('c-details'), {
     }]
   },
   options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } },
+});
+
+// ─── Showcase: IT Operations Dashboard mini-charts ───────────────
+new Chart(document.getElementById('c-ito-priority'), {
+  type: 'bar',
+  data: {
+    labels: ['P1','P2','P3','P4'],
+    datasets: [{
+      label: 'Incidents',
+      data: [3, 9, 15, 15],
+      backgroundColor: ['#d13438cc','#f7630ccc','#ffb900cc','#0078d4cc'],
+      borderColor: ['#d13438','#f7630c','#ffb900','#0078d4'],
+      borderWidth: 1.5,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, datalabels: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+      x: { ticks: { font: { size: 10 } } },
+    },
+  },
+});
+
+new Chart(document.getElementById('c-ito-os'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Windows','macOS','iOS','Android'],
+    datasets: [{
+      data: [1210, 320, 220, 92],
+      backgroundColor: [c[0], c[2], c[3], c[6]],
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } },
+      datalabels: { display: false },
+    },
+  },
+});
+
+new Chart(document.getElementById('c-ito-tickets'), {
+  type: 'line',
+  data: {
+    labels: Array.from({ length: 14 }, (_, i) => `D${i + 1}`),
+    datasets: [{
+      label: 'Tickets Opened',
+      data: [38,42,35,50,47,29,22,44,51,46,39,33,27,31],
+      borderColor: c[0],
+      backgroundColor: c[0] + '20',
+      fill: true,
+      tension: 0.35,
+      pointRadius: 0,
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, datalabels: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+      x: { ticks: { display: false } },
+    },
+  },
 });
 </script>
 </body>

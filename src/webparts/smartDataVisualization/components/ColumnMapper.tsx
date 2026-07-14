@@ -3,6 +3,7 @@ import * as strings from 'SmartDataVisualizationWebPartStrings';
 import {
   ChartType,
   IColumnConfig,
+  PALETTES,
   isPieOrDoughnut,
   isScatterOrBubble,
   isSingleValueType,
@@ -18,6 +19,7 @@ interface IColumnMapperProps {
   numericColumns?: string[];
   config: IColumnConfig;
   chartType: ChartType;
+  colorPalette: string;
   seriesColors: string;
   seriesTypes: string;
   showAdvanced: boolean;
@@ -31,6 +33,7 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
   numericColumns,
   config,
   chartType,
+  colorPalette,
   seriesColors,
   seriesTypes,
   showAdvanced,
@@ -53,7 +56,11 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
 
   const getSeriesColor = (yColIndex: number): string => {
     const c = colorOverrides[yColIndex] ? colorOverrides[yColIndex].trim() : '';
-    return c || '#0078d4';
+    if (c) return c;
+    // Match the palette color the chart actually renders for this series
+    // (ChartRenderer's resolveColors) instead of a fixed fallback blue.
+    const base = PALETTES[colorPalette] || PALETTES.office;
+    return base[yColIndex % base.length];
   };
 
   const setSeriesColor = (yColIndex: number, hex: string) => {
@@ -75,10 +82,25 @@ const ColumnMapper: React.FC<IColumnMapperProps> = ({
 
   const toggleYColumn = (col: string) => {
     const current = config.yColumns || [];
-    const next = current.includes(col)
-      ? current.filter(c => c !== col)
-      : [...current, col];
-    onChange({ yColumns: next });
+    const removeIdx = current.indexOf(col);
+    if (removeIdx >= 0) {
+      // Removing: splice the same position out of the per-series color/type
+      // overrides too, so later columns don't inherit the removed column's
+      // color/type once yColumns shifts down.
+      onChange({ yColumns: current.filter(c => c !== col) });
+      if (colorOverrides.length > removeIdx) {
+        const nextColors = [...colorOverrides];
+        nextColors.splice(removeIdx, 1);
+        onSeriesColorsChange(nextColors.join(','));
+      }
+      if (typeOverrides.length > removeIdx) {
+        const nextTypes = [...typeOverrides];
+        nextTypes.splice(removeIdx, 1);
+        onSeriesTypesChange(nextTypes.join(','));
+      }
+    } else {
+      onChange({ yColumns: [...current, col] });
+    }
   };
 
   const showX = !hasNoXColumn(chartType);

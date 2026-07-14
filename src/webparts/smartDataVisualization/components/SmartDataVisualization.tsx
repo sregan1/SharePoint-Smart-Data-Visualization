@@ -19,6 +19,7 @@ import {
   getCachedRows,
   setCachedRows,
   clearCachedRows,
+  buildCacheKey,
 } from '../services/dataLoaders';
 import DataSourcePanel from './DataSourcePanel';
 import ColumnMapper from './ColumnMapper';
@@ -59,7 +60,11 @@ interface ISmartDataVisualizationState {
 }
 
 // Group rows by a column, aggregating every numeric column. 'count' yields a
-// single "Count" column instead.
+// single "Count" column instead (see getCountColumnName for the collision-safe name).
+const COUNT_COLUMN = 'Count';
+const getCountColumnName = (groupBy: string): string =>
+  groupBy === COUNT_COLUMN ? `${COUNT_COLUMN}_1` : COUNT_COLUMN;
+
 const aggregateRows = (rows: IChartRecord[], groupBy: string, agg: string): IChartRecord[] => {
   if (!groupBy || !agg || agg === 'none' || !rows.length) return rows;
   const keys: string[] = [];
@@ -73,7 +78,7 @@ const aggregateRows = (rows: IChartRecord[], groupBy: string, agg: string): ICha
     const members = groups[key];
     const out: IChartRecord = { [groupBy]: key };
     if (agg === 'count') {
-      out.Count = members.length;
+      out[getCountColumnName(groupBy)] = members.length;
       return out;
     }
     const seen = new Set<string>();
@@ -229,10 +234,17 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   // React can invoke them twice). Kept in sync by the two handlers that change it.
   const columnConfigRef = React.useRef(state.columnConfig);
 
+  // Latest data source config, readable from async callbacks without depending
+  // on `props.*` — onPropertiesUpdate doesn't re-render, so after an inline
+  // source-type/URL edit the props stay stale until the next web-part render.
+  // Kept in sync by handleDataSourceConfigChange.
+  const dataSourceConfigRef = React.useRef(state.dataSourceConfig);
+
   // Async auto-load for network sources (SP list, SP file, REST API).
   // 'upload' is skipped — data is either pre-loaded from uploadedData or requires user interaction.
   React.useEffect(() => {
-    const srcType = props.dataSourceType || 'upload';
+    const cfg = dataSourceConfigRef.current;
+    const srcType = cfg.dataSourceType || 'upload';
     if (srcType === 'upload') return;
 
     let cancelled = false;
@@ -242,33 +254,37 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       try {
         let rows: IChartRecord[] = [];
 
-        const cacheKey = `${srcType}|${props.dataUrl}|${props.dataPath || ''}`;
+        const cacheKey = buildCacheKey(srcType, cfg.dataUrl, cfg.dataPath);
         const cacheMinutes = props.cacheMinutes || 0;
 
         if (srcType === 'sharePointList') {
-          if (!props.listName) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          rows = (await loadSharePointList(context, props.siteUrl, props.listName)).rows;
+          if (!cfg.listName) { setState(prev => ({ ...prev, isLoading: false })); return; }
+          rows = (await loadSharePointList(context, cfg.siteUrl, cfg.listName)).rows;
 
         } else if (srcType === 'sharePointFile') {
-          if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
-          rows = (await loadSharePointFile(props.dataUrl, props.delimiter || undefined, props.sheetName || undefined)).rows;
+          if (!cfg.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
+          rows = (await loadSharePointFile(cfg.dataUrl, cfg.delimiter || undefined, cfg.sheetName || undefined)).rows;
 
         } else if (srcType === 'restApi' || srcType === 'graphApi') {
-          if (!props.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
+          if (!cfg.dataUrl) { setState(prev => ({ ...prev, isLoading: false })); return; }
           const cached = getCachedRows(cacheKey, cacheMinutes);
           if (cached) {
             rows = cached;
           } else {
             rows = srcType === 'restApi'
-              ? (await loadRestApi(props.dataUrl, props.dataPath || undefined)).rows
-              : (await loadGraphApi(context, props.dataUrl, props.dataPath || undefined)).rows;
+              ? (await loadRestApi(cfg.dataUrl, cfg.dataPath || undefined)).rows
+              : (await loadGraphApi(context, cfg.dataUrl, cfg.dataPath || undefined)).rows;
             if (cacheMinutes > 0) setCachedRows(cacheKey, rows);
           }
         }
 
         if (cancelled) return;
         if (rows.length > 0) {
-          handleDataLoaded(rows, extractColumns(rows));
+          // Preserve the config panel's open/closed state on a refresh (refreshKey
+          // > 0 — the auto-refresh interval or the "Refresh" button) so a
+          // background reload doesn't close the panel out from under an author
+          // who has it open. The very first load still auto-collapses it.
+          handleDataLoaded(rows, extractColumns(rows), { preserveConfigOpen: refreshKey > 0 });
         } else {
           setState(prev => ({ ...prev, isLoading: false }));
         }
@@ -290,8 +306,14 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   // When the chart type changes to one that requires a numeric X axis and the
   // current X column is non-numeric, auto-select the first numeric column so
   // the chart renders immediately without requiring a manual mapper change.
+  // Track the previous type so this never fires on mount (it would otherwise
+  // treat a persisted numeric X mapping — e.g. a "Year" column on a bar chart —
+  // as if the user had just left a numeric-X chart type, and silently reset it).
+  const prevChartTypeRef = React.useRef<string>(chartType);
   React.useEffect(() => {
-    if (!state.data.length) return;
+    const prevType = prevChartTypeRef.current;
+    prevChartTypeRef.current = chartType;
+    if (prevType === chartType || !state.data.length) return;
     const isNumericXType = NUMERIC_X_TYPES.indexOf(chartType) >= 0;
     const currentX = columnConfigRef.current.xColumn;
     if (isNumericXType) {
@@ -307,7 +329,10 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       onPropertiesUpdate({ xColumn: newX, yColumns: newY.join(',') });
       setState(prev => ({ ...prev, columnConfig: newConfig }));
     } else {
-      // Switching FROM a numeric-X chart: if X is still numeric, reset to first non-numeric column
+      // Switching FROM a numeric-X chart: if X is still numeric, reset to first non-numeric column.
+      // Only do this if the PREVIOUS type actually required a numeric X — otherwise a
+      // deliberately-mapped numeric column (e.g. bar chart of Year vs Sales) gets clobbered.
+      if (NUMERIC_X_TYPES.indexOf(prevType) < 0) return;
       if (!currentX || !isNumericCol(currentX, state.data)) return;
       const nonNumericCols = state.columns.filter(col => !isNumericCol(col, state.data));
       const newX = nonNumericCols[0] || state.columns[0] || '';
@@ -320,16 +345,18 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartType]);
 
-  // Auto-refresh for network sources (view-mode dashboards)
+  // Auto-refresh for network sources (view-mode dashboards). Depends on the
+  // live source type (state), not props, so switching the source inline
+  // activates/deactivates the interval without waiting for a full re-render.
   React.useEffect(() => {
-    const srcType = props.dataSourceType || 'upload';
+    const srcType = state.dataSourceConfig.dataSourceType || 'upload';
     const minutes = props.refreshIntervalMinutes || 0;
     if (srcType === 'upload' || minutes <= 0) return;
     const id = setInterval(() => setRefreshKey(k => k + 1), minutes * 60_000);
     return () => clearInterval(id);
-  }, [props.refreshIntervalMinutes, props.dataSourceType]);
+  }, [props.refreshIntervalMinutes, state.dataSourceConfig.dataSourceType]);
 
-  const handleDataLoaded = (data: IChartRecord[], columns: string[]) => {
+  const handleDataLoaded = (data: IChartRecord[], columns: string[], opts?: { preserveConfigOpen?: boolean }) => {
     const hasCol = (c: string) => !!c && columns.includes(c);
     const numericCols = columns.filter(col => isNumericCol(col, data));
     const needsNumericX = NUMERIC_X_TYPES.indexOf(chartType) >= 0;
@@ -360,7 +387,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       columnConfig: newColumnConfig,
       autoLoadError: '',
       isLoading: false,
-      isConfigOpen: false,
+      isConfigOpen: opts?.preserveConfigOpen ? prev.isConfigOpen : false,
     }));
   };
 
@@ -384,10 +411,9 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   };
 
   const handleDataSourceConfigChange = (partial: Partial<IDataSourceConfig>) => {
-    setState(prev => ({
-      ...prev,
-      dataSourceConfig: { ...prev.dataSourceConfig, ...partial },
-    }));
+    const next = { ...dataSourceConfigRef.current, ...partial };
+    dataSourceConfigRef.current = next;
+    setState(prev => ({ ...prev, dataSourceConfig: next }));
     const mapped: Record<string, string> = {};
     if (partial.dataSourceType !== undefined) mapped.dataSourceType = partial.dataSourceType;
     if (partial.uploadedFileName !== undefined) mapped.uploadedFileName = partial.uploadedFileName;
@@ -497,19 +523,41 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       yColumns: bookmarkY.length ? bookmarkY : columnConfigRef.current.yColumns,
     };
     columnConfigRef.current = nextConfig;
+    const nextSortColumn = s.sortColumn ?? state.sortColumn;
+    const nextSortDirection = s.sortDirection ?? state.sortDirection;
+    const nextRowLimit = s.rowLimit ?? state.rowLimit;
+    const nextFilterColumn = s.filterColumn ?? state.filterColumn;
+    const nextFilterValue = s.filterValue ?? state.filterValue;
+    const nextGroupByColumn = s.groupByColumn ?? state.groupByColumn;
+    const nextAggregation = s.aggregation ?? state.aggregation;
     setState(prev => ({
       ...prev,
-      sortColumn: s.sortColumn ?? prev.sortColumn,
-      sortDirection: s.sortDirection ?? prev.sortDirection,
-      rowLimit: s.rowLimit ?? prev.rowLimit,
-      filterColumn: s.filterColumn ?? prev.filterColumn,
-      filterValue: s.filterValue ?? prev.filterValue,
-      groupByColumn: s.groupByColumn ?? prev.groupByColumn,
-      aggregation: s.aggregation ?? prev.aggregation,
+      sortColumn: nextSortColumn,
+      sortDirection: nextSortDirection,
+      rowLimit: nextRowLimit,
+      filterColumn: nextFilterColumn,
+      filterValue: nextFilterValue,
+      groupByColumn: nextGroupByColumn,
+      aggregation: nextAggregation,
       columnConfig: nextConfig,
       drillPath: [],
       detailCategory: '',
     }));
+    // Persist in edit mode so a later save doesn't revert to the pre-bookmark
+    // view — read-mode apply stays a local, non-persisting view change.
+    if (!isReadOnly) {
+      onPropertiesUpdate({
+        sortColumn: nextSortColumn,
+        sortDirection: nextSortDirection,
+        rowLimit: nextRowLimit,
+        filterColumn: nextFilterColumn,
+        filterValue: nextFilterValue,
+        groupByColumn: nextGroupByColumn,
+        aggregation: nextAggregation,
+        xColumn: nextConfig.xColumn,
+        yColumns: nextConfig.yColumns.join(','),
+      } as any);
+    }
   };
 
   const handleDataControlsChange = (partial: {
@@ -530,12 +578,23 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   };
 
   const handleRefresh = () => {
-    const srcType = props.dataSourceType || 'upload';
+    const cfg = dataSourceConfigRef.current;
+    const srcType = cfg.dataSourceType || 'upload';
     if (srcType === 'upload') return;
     // Explicit refresh should bypass the session cache
-    clearCachedRows(`${srcType}|${props.dataUrl}|${props.dataPath || ''}`);
+    clearCachedRows(buildCacheKey(srcType, cfg.dataUrl, cfg.dataPath));
     setRefreshKey(k => k + 1);
   };
+
+  // Debounce the read-mode viewer filter value used for actual filtering — the
+  // input itself stays instant (bound to state.viewerFilterValue), but the
+  // expensive filter → aggregate → chart rebuild only re-runs 250ms after the
+  // user stops typing, instead of on every keystroke.
+  const [debouncedViewerFilterValue, setDebouncedViewerFilterValue] = React.useState(state.viewerFilterValue);
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedViewerFilterValue(state.viewerFilterValue), 250);
+    return () => clearTimeout(t);
+  }, [state.viewerFilterValue]);
 
   // Raw rows after author filter, viewer filter, and drill-down filters — but
   // before aggregation. Details-on-demand shows these underlying rows.
@@ -547,8 +606,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
         String(r[state.filterColumn] ?? '').toLowerCase().includes(lc)
       );
     }
-    if (state.viewerFilterColumn && state.viewerFilterValue) {
-      const lc = state.viewerFilterValue.toLowerCase();
+    if (state.viewerFilterColumn && debouncedViewerFilterValue) {
+      const lc = debouncedViewerFilterValue.toLowerCase();
       result = result.filter(r =>
         String(r[state.viewerFilterColumn] ?? '').toLowerCase().includes(lc)
       );
@@ -559,7 +618,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
     });
     return result;
   }, [state.data, state.filterColumn, state.filterValue, state.viewerFilterColumn,
-      state.viewerFilterValue, state.drillPath, state.drillDownColumns]);
+      debouncedViewerFilterValue, state.drillPath, state.drillDownColumns]);
 
   // While drilling, the active hierarchy level becomes the grouping/X column
   const effectiveGroupBy = drillActive ? drillLevels[drillLevelIndex] : state.groupByColumn;
@@ -573,8 +632,13 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
       result = [...result].sort((a, b) => {
         const av = a[state.sortColumn];
         const bv = b[state.sortColumn];
-        const cmp = typeof av === 'number' && typeof bv === 'number'
-          ? (av - bv)
+        // Numeric-string columns (REST/Graph APIs, SharePoint text fields holding
+        // numbers) must sort numerically too, or "100" sorts before "20" as text.
+        const an = Number(av), bn = Number(bv);
+        const bothNumeric = av !== null && av !== undefined && av !== '' &&
+          bv !== null && bv !== undefined && bv !== '' && !isNaN(an) && !isNaN(bn);
+        const cmp = bothNumeric
+          ? (an - bn)
           : String(av ?? '').localeCompare(String(bv ?? ''));
         return state.sortDirection === 'desc' ? -cmp : cmp;
       });
@@ -595,9 +659,13 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
   );
   const srcType = props.dataSourceType || 'upload';
 
-  const effectiveColumnConfig: IColumnConfig = drillActive
-    ? { ...columnConfig, xColumn: drillLevels[drillLevelIndex] }
-    : columnConfig;
+  // 'count' aggregation replaces the row shape with [groupBy, Count] — the chart
+  // must read the generated Count column, not the pre-aggregation Y columns.
+  const effectiveColumnConfig: IColumnConfig = effectiveAggregation === 'count'
+    ? { ...columnConfig, xColumn: effectiveGroupBy || columnConfig.xColumn, yColumns: [getCountColumnName(effectiveGroupBy)] }
+    : drillActive
+      ? { ...columnConfig, xColumn: drillLevels[drillLevelIndex] }
+      : columnConfig;
 
   const detailXColumn = effectiveColumnConfig.xColumn;
   const detailRows = state.detailCategory
@@ -644,6 +712,7 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
                   numericColumns={numericColumns}
                   config={columnConfig}
                   chartType={chartType}
+                  colorPalette={colorPalette || 'office'}
                   seriesColors={seriesColors}
                   seriesTypes={state.seriesTypes}
                   showAdvanced={true}
