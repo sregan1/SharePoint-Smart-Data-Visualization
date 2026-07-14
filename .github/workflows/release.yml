@@ -1,0 +1,63 @@
+name: Release
+
+# Builds the SPFx package and publishes a GitHub Release whenever a version
+# tag (vX.Y.Z) is pushed. Trigger a release with:
+#   git tag vX.Y.Z && git push origin vX.Y.Z
+# Or run manually from the Actions tab against any existing tag.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (must already exist, e.g. v1.3.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build release package
+        run: npm run ship
+
+      - name: Extract changelog section for this version
+        id: notes
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          awk -v ver="## [$VERSION]" '
+            index($0, ver) == 1 { found=1; print; next }
+            found && index($0, "## [") == 1 { exit }
+            found
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "See CHANGELOG.md for details." > release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          gh release create "$TAG" \
+            sharepoint/solution/*.sppkg \
+            --title "$TAG" \
+            --notes-file release-notes.md
