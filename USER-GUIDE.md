@@ -1,6 +1,6 @@
 # Smart Data Visualization — User Guide
 
-*Version 1.3.0*
+*Version 1.3.1*
 
 This guide walks through every feature of the Smart Data Visualization web part from a page editor's perspective.
 

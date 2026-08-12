@@ -117,6 +117,19 @@ const buildColumnConfig = (
   sizeColumn: string,
   chartType: string
 ): IColumnConfig => {
+  // Network sources (SharePoint list, REST/Graph API, remote file) have no columns
+  // yet at mount — the schema only arrives once the async load effect resolves.
+  // Treat "no columns known" as "can't validate" rather than "invalid": trust the
+  // persisted mapping as-is so handleDataLoaded can re-validate it against the real
+  // schema once it arrives, instead of it being silently defaulted away right here.
+  if (columns.length === 0) {
+    return {
+      xColumn: xColumn || '',
+      yColumns: yColumns ? yColumns.split(',').filter(Boolean) : [],
+      labelColumn: labelColumn || '',
+      sizeColumn: sizeColumn || '',
+    };
+  }
   const hasCol = (c: string) => !!c && columns.includes(c);
   const yCols = (yColumns ? yColumns.split(',').filter(Boolean) : []).filter(hasCol);
   const numericCols = columns.filter(col => isNumericCol(col, data));
@@ -837,8 +850,8 @@ const SmartDataVisualization: React.FC<ISmartDataVisualizationProps> = (props) =
             chartTitle={chartTitle}
             showLegend={showLegend}
             stacked={stacked}
-            xAxisLabel={xAxisLabel}
-            yAxisLabel={yAxisLabel}
+            xAxisLabel={xAxisLabel || effectiveColumnConfig.xColumn || ''}
+            yAxisLabel={yAxisLabel || effectiveColumnConfig.yColumns.join(', ') || ''}
             legendPosition={legendPosition || 'bottom'}
             chartHeight={chartHeight || 400}
             showExportBar={showExportBar !== false}

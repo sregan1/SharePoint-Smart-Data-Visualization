@@ -167,6 +167,17 @@ export default class SmartDataVisualizationWebPart
         isReadOnly: this.displayMode === DisplayMode.Read,
         onPropertiesUpdate: (props: Partial<ISmartDataVisualizationWebPartProps>) => {
           Object.assign(this.properties, props);
+          // SPFx only writes property changes into the page's saved draft when
+          // they flow through the property pane's dirty-bit pipeline. Settings
+          // edited via this in-canvas panel bypass that pipeline entirely, so
+          // without this call the edits are silently lost on Publish. There is
+          // no supported public API for this — _afterPropertyUpdated is the
+          // same internal hook the real property pane uses to mark the page
+          // dirty and persist the change; it also triggers a re-render.
+          const self = this as unknown as { _afterPropertyUpdated?: (shouldRefresh: boolean) => void };
+          if (typeof self._afterPropertyUpdated === 'function') {
+            self._afterPropertyUpdated(true);
+          }
         },
         onItemSelected: this._handleItemSelected,
       }

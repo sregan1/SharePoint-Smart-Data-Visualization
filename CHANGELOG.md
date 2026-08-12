@@ -4,6 +4,21 @@ All notable changes to Smart Data Visualization are documented here.
 
 ---
 
+## [1.3.1] — 2026-08-12
+
+No new chart types or data sources. Fixes a settings-persistence bug plus a data-loading bug, and changes X/Y Axis Label to default from the selected column instead of requiring manual entry.
+
+### Changed
+
+- **X Axis Label and Y Axis Label now default to the selected column(s)** instead of showing blank until typed in — e.g. mapping "Revenue" to the Y axis labels the axis "Revenue" automatically; multiple Y columns are joined with a comma (e.g. "Revenue, Profit"). The property pane fields still work exactly as before as an optional override — type a custom label (e.g. "Sales ($)") to replace the auto-derived one.
+
+### Fixed
+
+- **Settings changed via the in-canvas data source panel (Site URL, List Name, and other inline fields) were silently lost on Publish** — edits were applied to the web part's in-memory properties but never marked the page dirty, so the page's saved draft never picked them up and Publish reverted to the last-persisted value. Canvas-driven edits now correctly persist.
+- **Column mapping (X / Y / Label / Size columns) could silently reset to auto-picked defaults on load** for SharePoint List, SharePoint File, REST API, and Microsoft Graph sources — the saved mapping was discarded because the column schema isn't known synchronously at mount for network sources; a valid persisted mapping is now trusted until the real schema arrives and can validate it.
+
+---
+
 ## [1.3.0] — 2026-07-14
 
 A hardening release. No new chart types or data sources — this release is a full code review pass fixing 43 issues found across data loading, chart rendering, click/tooltip interactivity, and the property pane, plus documentation for previously-undocumented v1.2.0 settings (Dual Y Axis, Error Bars, Significance Brackets) and new screenshots covering Microsoft Graph setup and a finished multi-web-part page.
